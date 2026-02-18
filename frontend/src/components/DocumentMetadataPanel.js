@@ -88,6 +88,18 @@ class DocumentMetadataPanel extends Component {
               {formatDateFromISO(modulesManager, intl, doc.dateCreated)}
             </Typography>
           </Grid>
+          <Grid item xs={3}>
+            <Typography className={classes.label}>
+              {formatMessage(intl, "claimlens", "document.language")}
+            </Typography>
+            <Typography className={classes.value}>{doc.language || "-"}</Typography>
+          </Grid>
+          <Grid item xs={3}>
+            <Typography className={classes.label}>
+              {formatMessage(intl, "claimlens", "document.claimUuid")}
+            </Typography>
+            <Typography className={classes.value}>{doc.claimUuid || "-"}</Typography>
+          </Grid>
           {doc.errorMessage && (
             <Grid item xs={12}>
               <Typography className={classes.label}>

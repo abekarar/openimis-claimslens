@@ -10,12 +10,24 @@ import {
   journalize,
   coreConfirm,
 } from "@openimis/fe-core";
-import { fetchDocument, fetchAuditLogs, processDocument } from "../actions";
+import {
+  fetchDocument,
+  fetchAuditLogs,
+  processDocument,
+  runValidation,
+  resolveValidationFinding,
+  reviewRegistryProposal,
+  applyRegistryProposal,
+} from "../actions";
 import DocumentMetadataPanel from "./DocumentMetadataPanel";
 import ExtractionResultPanel from "./ExtractionResultPanel";
 import ProcessingTimeline from "./ProcessingTimeline";
+import ValidationResultPanel from "./ValidationResultPanel";
+import ValidationFindingsPanel from "./ValidationFindingsPanel";
+import RegistryUpdatePanel from "./RegistryUpdatePanel";
 import {
   STATUS_PENDING,
+  STATUS_COMPLETED,
   PROCESSING_STATUSES,
   TERMINAL_STATUSES,
   POLL_INTERVAL_MS,
@@ -24,6 +36,7 @@ import {
 
 const styles = (theme) => ({
   actions: { marginBottom: theme.spacing(2) },
+  validateButton: { marginLeft: theme.spacing(1) },
 });
 
 class DocumentForm extends Component {
@@ -102,6 +115,64 @@ class DocumentForm extends Component {
     }
   };
 
+  handleRunValidation = () => {
+    const { document: doc, intl } = this.props;
+    if (doc) {
+      this.props.runValidation(
+        doc.uuid,
+        formatMessage(intl, "claimlens", "action.runValidation")
+      );
+    }
+  };
+
+  handleResolveFinding = (findingId, resolutionStatus) => {
+    const { intl } = this.props;
+    this.props.resolveValidationFinding(
+      findingId,
+      resolutionStatus,
+      formatMessage(intl, "claimlens", "action.resolveFinding")
+    );
+  };
+
+  handleReviewProposal = (id, status) => {
+    const { intl } = this.props;
+    this.props.reviewRegistryProposal(
+      id,
+      status,
+      formatMessage(intl, "claimlens", "action.reviewProposal")
+    );
+  };
+
+  handleApplyProposal = (id) => {
+    const { intl } = this.props;
+    this.props.applyRegistryProposal(
+      id,
+      formatMessage(intl, "claimlens", "action.applyProposal")
+    );
+  };
+
+  gatherFindings(validationResults) {
+    if (!validationResults || !validationResults.length) return [];
+    const findings = [];
+    validationResults.forEach((vr) => {
+      if (vr.findings && vr.findings.length) {
+        findings.push(...vr.findings);
+      }
+    });
+    return findings;
+  }
+
+  gatherProposals(validationResults) {
+    if (!validationResults || !validationResults.length) return [];
+    const proposals = [];
+    validationResults.forEach((vr) => {
+      if (vr.registryProposals && vr.registryProposals.length) {
+        proposals.push(...vr.registryProposals);
+      }
+    });
+    return proposals;
+  }
+
   render() {
     const { classes, intl, document: doc, fetchingDocument, submittingMutation } = this.props;
     if (fetchingDocument || !doc) {
@@ -110,6 +181,10 @@ class DocumentForm extends Component {
 
     const canProcess = doc.status === STATUS_PENDING;
     const isProcessing = PROCESSING_STATUSES.includes(doc.status);
+    const canValidate = doc.status === STATUS_COMPLETED && !!doc.claimUuid;
+
+    const findings = this.gatherFindings(doc.validationResults);
+    const proposals = this.gatherProposals(doc.validationResults);
 
     return (
       <div>
@@ -135,10 +210,40 @@ class DocumentForm extends Component {
           </div>
         )}
 
+        {canValidate && (
+          <div className={classes.actions}>
+            <Button
+              variant="contained"
+              color="primary"
+              className={classes.validateButton}
+              onClick={this.handleRunValidation}
+              disabled={submittingMutation}
+            >
+              {formatMessage(intl, "claimlens", "action.runValidation")}
+            </Button>
+          </div>
+        )}
+
         <ProcessingTimeline status={doc.status} />
         <DocumentMetadataPanel document={doc} />
         {doc.extractionResult && (
           <ExtractionResultPanel extractionResult={doc.extractionResult} />
+        )}
+        {doc.validationResults && doc.validationResults.length > 0 && (
+          <ValidationResultPanel validationResults={doc.validationResults} />
+        )}
+        {findings.length > 0 && (
+          <ValidationFindingsPanel
+            findings={findings}
+            onResolveFinding={this.handleResolveFinding}
+          />
+        )}
+        {proposals.length > 0 && (
+          <RegistryUpdatePanel
+            proposals={proposals}
+            onReviewProposal={this.handleReviewProposal}
+            onApplyProposal={this.handleApplyProposal}
+          />
         )}
       </div>
     );
@@ -154,7 +259,17 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = (dispatch) =>
   bindActionCreators(
-    { fetchDocument, fetchAuditLogs, processDocument, journalize, coreConfirm },
+    {
+      fetchDocument,
+      fetchAuditLogs,
+      processDocument,
+      runValidation,
+      resolveValidationFinding,
+      reviewRegistryProposal,
+      applyRegistryProposal,
+      journalize,
+      coreConfirm,
+    },
     dispatch
   );
 

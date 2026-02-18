@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.models import HistoryModel, UUIDModel, ObjectMutation, MutationLog
+import core.models as core_models
 
 
 class DocumentType(HistoryModel):
@@ -74,6 +75,10 @@ class Document(HistoryModel):
         EngineConfig, on_delete=models.DO_NOTHING, null=True, blank=True,
         related_name='documents'
     )
+    language = models.CharField(max_length=10, null=True, blank=True,
+                                help_text="ISO 639-1 language code detected during classification")
+    claim_uuid = models.UUIDField(null=True, blank=True,
+                                  help_text="UUID of linked openIMIS Claim (plain UUID, not FK)")
 
     def __str__(self):
         return f"{self.original_filename} ({self.status})"
@@ -128,3 +133,166 @@ class DocumentMutation(UUIDModel, ObjectMutation):
     mutation = models.ForeignKey(
         MutationLog, models.DO_NOTHING, related_name='claimlens_documents'
     )
+
+
+class EngineCapabilityScore(HistoryModel):
+    engine_config = models.ForeignKey(
+        EngineConfig, on_delete=models.DO_NOTHING, related_name='capability_scores'
+    )
+    language = models.CharField(max_length=10, help_text="ISO 639-1 language code")
+    document_type = models.ForeignKey(
+        DocumentType, on_delete=models.DO_NOTHING, null=True, blank=True,
+        related_name='capability_scores'
+    )
+    accuracy_score = models.IntegerField(
+        default=50, help_text="Accuracy score 0-100"
+    )
+    cost_per_page = models.DecimalField(
+        max_digits=10, decimal_places=4, default=0,
+        help_text="Cost per page in USD"
+    )
+    speed_score = models.IntegerField(
+        default=50, help_text="Speed score 0-100"
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('engine_config', 'language', 'document_type')
+
+    def __str__(self):
+        dt = self.document_type.code if self.document_type else '*'
+        return f"{self.engine_config.name} [{self.language}/{dt}] acc={self.accuracy_score}"
+
+
+class RoutingPolicy(HistoryModel):
+    accuracy_weight = models.FloatField(default=0.50)
+    cost_weight = models.FloatField(default=0.30)
+    speed_weight = models.FloatField(default=0.20)
+
+    def save(self, **kwargs):
+        # Singleton: always use pk=1
+        self.pk = self.__class__.objects.first().pk if self.__class__.objects.exists() else None
+        super().save(**kwargs)
+
+    def __str__(self):
+        return f"RoutingPolicy(acc={self.accuracy_weight}, cost={self.cost_weight}, speed={self.speed_weight})"
+
+    class Meta:
+        verbose_name_plural = "Routing policies"
+
+
+class ValidationResult(HistoryModel):
+    class ValidationType(models.TextChoices):
+        UPSTREAM = 'upstream', _('Upstream')
+        DOWNSTREAM = 'downstream', _('Downstream')
+
+    class OverallStatus(models.TextChoices):
+        MATCHED = 'matched', _('Matched')
+        MISMATCHED = 'mismatched', _('Mismatched')
+        PARTIAL_MATCH = 'partial_match', _('Partial Match')
+        PENDING = 'pending', _('Pending')
+        ERROR = 'error', _('Error')
+
+    document = models.ForeignKey(
+        Document, on_delete=models.DO_NOTHING, related_name='validation_results'
+    )
+    validation_type = models.CharField(max_length=20, choices=ValidationType.choices)
+    overall_status = models.CharField(
+        max_length=20, choices=OverallStatus.choices, default=OverallStatus.PENDING
+    )
+    field_comparisons = models.JSONField(default=dict, blank=True)
+    discrepancy_count = models.IntegerField(default=0)
+    match_score = models.FloatField(default=0.0)
+    summary = models.TextField(blank=True, default="")
+    validated_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.validation_type} validation for {self.document} — {self.overall_status}"
+
+
+class ValidationRule(HistoryModel):
+    class RuleType(models.TextChoices):
+        ELIGIBILITY = 'eligibility', _('Eligibility')
+        CLINICAL = 'clinical', _('Clinical')
+        FRAUD = 'fraud', _('Fraud')
+        REGISTRY = 'registry', _('Registry')
+
+    class Severity(models.TextChoices):
+        INFO = 'info', _('Info')
+        WARNING = 'warning', _('Warning')
+        ERROR = 'error', _('Error')
+
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=255)
+    rule_type = models.CharField(max_length=20, choices=RuleType.choices)
+    rule_definition = models.JSONField(default=dict, blank=True)
+    severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.WARNING)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.code} — {self.name} ({self.rule_type})"
+
+
+class ValidationFinding(HistoryModel):
+    class FindingType(models.TextChoices):
+        VIOLATION = 'violation', _('Violation')
+        WARNING = 'warning', _('Warning')
+        UPDATE_PROPOSAL = 'update_proposal', _('Update Proposal')
+
+    class ResolutionStatus(models.TextChoices):
+        PENDING = 'pending', _('Pending')
+        ACCEPTED = 'accepted', _('Accepted')
+        REJECTED = 'rejected', _('Rejected')
+        DEFERRED = 'deferred', _('Deferred')
+
+    validation_result = models.ForeignKey(
+        ValidationResult, on_delete=models.DO_NOTHING, related_name='findings'
+    )
+    validation_rule = models.ForeignKey(
+        ValidationRule, on_delete=models.DO_NOTHING, null=True, blank=True,
+        related_name='findings'
+    )
+    finding_type = models.CharField(max_length=20, choices=FindingType.choices)
+    severity = models.CharField(
+        max_length=10, choices=ValidationRule.Severity.choices, default=ValidationRule.Severity.WARNING
+    )
+    field = models.CharField(max_length=255, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    details = models.JSONField(default=dict, blank=True)
+    resolution_status = models.CharField(
+        max_length=20, choices=ResolutionStatus.choices, default=ResolutionStatus.PENDING
+    )
+
+    def __str__(self):
+        return f"{self.finding_type} [{self.severity}] {self.field}: {self.description[:50]}"
+
+
+class RegistryUpdateProposal(HistoryModel):
+    class Status(models.TextChoices):
+        PROPOSED = 'proposed', _('Proposed')
+        APPROVED = 'approved', _('Approved')
+        APPLIED = 'applied', _('Applied')
+        REJECTED = 'rejected', _('Rejected')
+
+    document = models.ForeignKey(
+        Document, on_delete=models.DO_NOTHING, related_name='registry_proposals'
+    )
+    validation_result = models.ForeignKey(
+        ValidationResult, on_delete=models.DO_NOTHING, related_name='registry_proposals'
+    )
+    target_model = models.CharField(max_length=50, help_text="e.g. insuree, health_facility")
+    target_uuid = models.UUIDField()
+    field_name = models.CharField(max_length=255)
+    current_value = models.TextField(blank=True, default="")
+    proposed_value = models.TextField(blank=True, default="")
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PROPOSED
+    )
+    reviewed_by = models.ForeignKey(
+        core_models.User, on_delete=models.DO_NOTHING, null=True, blank=True,
+        related_name='claimlens_proposal_reviews'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Proposal: {self.target_model}.{self.field_name} → {self.proposed_value[:30]}"

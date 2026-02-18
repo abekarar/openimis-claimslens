@@ -12,6 +12,16 @@ DEFAULT_CFG = {
     "gql_mutation_manage_document_types_perms": ["159006"],
     "gql_query_engine_configs_perms": ["159007"],
     "gql_mutation_manage_engine_configs_perms": ["159008"],
+    "gql_query_validation_results_perms": ["159009"],
+    "gql_mutation_run_validation_perms": ["159010"],
+    "gql_query_validation_rules_perms": ["159011"],
+    "gql_mutation_manage_validation_rules_perms": ["159012"],
+    "gql_query_registry_proposals_perms": ["159013"],
+    "gql_mutation_manage_registry_proposals_perms": ["159014"],
+    "gql_query_capability_scores_perms": ["159015"],
+    "gql_mutation_manage_capability_scores_perms": ["159016"],
+    "gql_query_routing_policy_perms": ["159017"],
+    "gql_mutation_manage_routing_policy_perms": ["159018"],
 
     # Confidence thresholds
     "auto_approve_threshold": 0.90,
@@ -28,6 +38,7 @@ DEFAULT_CFG = {
     "celery_queue_preprocessing": "claimlens.preprocessing",
     "celery_queue_classification": "claimlens.classification",
     "celery_queue_extraction": "claimlens.extraction",
+    "celery_queue_validation": "claimlens.validation",
 
     # LLM
     "default_engine_adapter": "mistral",
@@ -58,6 +69,16 @@ class ClaimlensConfig(AppConfig):
     gql_mutation_manage_document_types_perms = []
     gql_query_engine_configs_perms = []
     gql_mutation_manage_engine_configs_perms = []
+    gql_query_validation_results_perms = []
+    gql_mutation_run_validation_perms = []
+    gql_query_validation_rules_perms = []
+    gql_mutation_manage_validation_rules_perms = []
+    gql_query_registry_proposals_perms = []
+    gql_mutation_manage_registry_proposals_perms = []
+    gql_query_capability_scores_perms = []
+    gql_mutation_manage_capability_scores_perms = []
+    gql_query_routing_policy_perms = []
+    gql_mutation_manage_routing_policy_perms = []
 
     # Confidence thresholds
     auto_approve_threshold = None
@@ -74,6 +95,7 @@ class ClaimlensConfig(AppConfig):
     celery_queue_preprocessing = None
     celery_queue_classification = None
     celery_queue_extraction = None
+    celery_queue_validation = None
 
     # LLM
     default_engine_adapter = None
@@ -94,3 +116,5 @@ class ClaimlensConfig(AppConfig):
 
         cfg = ModuleConfiguration.get_or_default(MODULE_NAME, DEFAULT_CFG)
         self.__load_config(cfg)
+
+        import claimlens.signals  # noqa: F401

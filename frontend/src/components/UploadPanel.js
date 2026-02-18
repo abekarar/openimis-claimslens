@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Button, LinearProgress, Box,
+  Paper, Typography, Button, LinearProgress, Box, TextField,
 } from "@material-ui/core";
 import { CloudUpload, CheckCircle, Error as ErrorIcon } from "@material-ui/icons";
 import {
@@ -49,6 +49,8 @@ class UploadPanel extends Component {
     selectedFile: null,
     validationError: null,
     dragOver: false,
+    language: "",
+    claimUuid: "",
   };
 
   fileInputRef = React.createRef();
@@ -106,9 +108,13 @@ class UploadPanel extends Component {
   };
 
   handleUpload = () => {
-    const { selectedFile } = this.state;
+    const { selectedFile, language, claimUuid } = this.state;
     if (selectedFile) {
-      this.props.uploadDocument(selectedFile);
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      if (language) formData.append("language", language);
+      if (claimUuid) formData.append("claim_uuid", claimUuid);
+      this.props.uploadDocument(formData);
     }
   };
 
@@ -126,7 +132,7 @@ class UploadPanel extends Component {
 
   render() {
     const { classes, intl, uploading, uploadProgress, uploadResponse, uploadError } = this.props;
-    const { selectedFile, validationError, dragOver } = this.state;
+    const { selectedFile, validationError, dragOver, language, claimUuid } = this.state;
 
     return (
       <Paper className={classes.paper}>
@@ -170,6 +176,23 @@ class UploadPanel extends Component {
               .replace("{size}", this.formatFileSize(selectedFile.size))}
           </Typography>
         )}
+
+        <TextField
+          label={formatMessage(intl, "claimlens", "upload.language")}
+          placeholder="e.g. en, fr, sw"
+          value={language}
+          onChange={(e) => this.setState({ language: e.target.value })}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label={formatMessage(intl, "claimlens", "upload.claimUuid")}
+          placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+          value={claimUuid}
+          onChange={(e) => this.setState({ claimUuid: e.target.value })}
+          fullWidth
+          margin="normal"
+        />
 
         {uploading && (
           <Box className={classes.progress}>

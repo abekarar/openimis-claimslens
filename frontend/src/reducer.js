@@ -46,6 +46,44 @@ const initialState = {
   uploadResponse: null,
   uploadError: null,
 
+  // Capability scores
+  fetchingCapabilityScores: false,
+  fetchedCapabilityScores: false,
+  errorCapabilityScores: null,
+  capabilityScores: [],
+  capabilityScoresPageInfo: { totalCount: 0 },
+
+  // Routing policy
+  fetchingRoutingPolicy: false,
+  fetchedRoutingPolicy: false,
+  errorRoutingPolicy: null,
+  routingPolicy: null,
+
+  // Validation results
+  fetchingValidationResults: false,
+  fetchedValidationResults: false,
+  errorValidationResults: null,
+  validationResults: [],
+
+  // Validation rules
+  fetchingValidationRules: false,
+  fetchedValidationRules: false,
+  errorValidationRules: null,
+  validationRules: [],
+  validationRulesPageInfo: { totalCount: 0 },
+
+  // Single validation rule
+  fetchingValidationRule: false,
+  fetchedValidationRule: false,
+  errorValidationRule: null,
+  validationRule: null,
+
+  // Registry proposals
+  fetchingRegistryProposals: false,
+  fetchedRegistryProposals: false,
+  errorRegistryProposals: null,
+  registryProposals: [],
+
   submittingMutation: false,
   mutation: {},
 };
@@ -227,6 +265,92 @@ function reducer(state = initialState, action) {
         uploadError: action.payload,
       };
 
+    // Capability scores
+    case "CLAIMLENS_CAPABILITY_SCORES_REQ":
+      return { ...state, fetchingCapabilityScores: true, fetchedCapabilityScores: false, capabilityScores: [], errorCapabilityScores: null };
+    case "CLAIMLENS_CAPABILITY_SCORES_RESP":
+      return {
+        ...state,
+        fetchingCapabilityScores: false,
+        fetchedCapabilityScores: true,
+        capabilityScores: parseData(action.payload.data.claimlensCapabilityScores),
+        capabilityScoresPageInfo: pageInfo(action.payload.data.claimlensCapabilityScores),
+        errorCapabilityScores: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_CAPABILITY_SCORES_ERR":
+      return { ...state, fetchingCapabilityScores: false, errorCapabilityScores: formatServerError(action.payload) };
+
+    // Routing policy
+    case "CLAIMLENS_ROUTING_POLICY_REQ":
+      return { ...state, fetchingRoutingPolicy: true, fetchedRoutingPolicy: false, routingPolicy: null, errorRoutingPolicy: null };
+    case "CLAIMLENS_ROUTING_POLICY_RESP":
+      return {
+        ...state,
+        fetchingRoutingPolicy: false,
+        fetchedRoutingPolicy: true,
+        routingPolicy: action.payload.data.claimlensRoutingPolicy,
+        errorRoutingPolicy: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_ROUTING_POLICY_ERR":
+      return { ...state, fetchingRoutingPolicy: false, errorRoutingPolicy: formatServerError(action.payload) };
+
+    // Validation results
+    case "CLAIMLENS_VALIDATION_RESULTS_REQ":
+      return { ...state, fetchingValidationResults: true, fetchedValidationResults: false, validationResults: [], errorValidationResults: null };
+    case "CLAIMLENS_VALIDATION_RESULTS_RESP":
+      return {
+        ...state,
+        fetchingValidationResults: false,
+        fetchedValidationResults: true,
+        validationResults: parseData(action.payload.data.claimlensValidationResults),
+        errorValidationResults: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_VALIDATION_RESULTS_ERR":
+      return { ...state, fetchingValidationResults: false, errorValidationResults: formatServerError(action.payload) };
+
+    // Validation rules
+    case "CLAIMLENS_VALIDATION_RULES_REQ":
+      return { ...state, fetchingValidationRules: true, fetchedValidationRules: false, validationRules: [], errorValidationRules: null };
+    case "CLAIMLENS_VALIDATION_RULES_RESP":
+      return {
+        ...state,
+        fetchingValidationRules: false,
+        fetchedValidationRules: true,
+        validationRules: parseData(action.payload.data.claimlensValidationRules),
+        validationRulesPageInfo: pageInfo(action.payload.data.claimlensValidationRules),
+        errorValidationRules: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_VALIDATION_RULES_ERR":
+      return { ...state, fetchingValidationRules: false, errorValidationRules: formatServerError(action.payload) };
+
+    // Single validation rule
+    case "CLAIMLENS_VALIDATION_RULE_REQ":
+      return { ...state, fetchingValidationRule: true, fetchedValidationRule: false, validationRule: null, errorValidationRule: null };
+    case "CLAIMLENS_VALIDATION_RULE_RESP":
+      return {
+        ...state,
+        fetchingValidationRule: false,
+        fetchedValidationRule: true,
+        validationRule: action.payload.data.claimlensValidationRule,
+        errorValidationRule: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_VALIDATION_RULE_ERR":
+      return { ...state, fetchingValidationRule: false, errorValidationRule: formatServerError(action.payload) };
+
+    // Registry proposals
+    case "CLAIMLENS_REGISTRY_PROPOSALS_REQ":
+      return { ...state, fetchingRegistryProposals: true, fetchedRegistryProposals: false, registryProposals: [], errorRegistryProposals: null };
+    case "CLAIMLENS_REGISTRY_PROPOSALS_RESP":
+      return {
+        ...state,
+        fetchingRegistryProposals: false,
+        fetchedRegistryProposals: true,
+        registryProposals: parseData(action.payload.data.claimlensRegistryProposals),
+        errorRegistryProposals: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_REGISTRY_PROPOSALS_ERR":
+      return { ...state, fetchingRegistryProposals: false, errorRegistryProposals: formatServerError(action.payload) };
+
     // Mutations
     case "CLAIMLENS_MUTATION_REQ":
       return dispatchMutationReq(state, action);
@@ -242,6 +366,24 @@ function reducer(state = initialState, action) {
       return dispatchMutationResp(state, "createClaimlensEngineConfig", action);
     case "CLAIMLENS_UPDATE_ENGINE_CONFIG_RESP":
       return dispatchMutationResp(state, "updateClaimlensEngineConfig", action);
+    case "CLAIMLENS_CREATE_CAPABILITY_SCORE_RESP":
+      return dispatchMutationResp(state, "createClaimlensCapabilityScore", action);
+    case "CLAIMLENS_UPDATE_CAPABILITY_SCORE_RESP":
+      return dispatchMutationResp(state, "updateClaimlensCapabilityScore", action);
+    case "CLAIMLENS_UPDATE_ROUTING_POLICY_RESP":
+      return dispatchMutationResp(state, "updateClaimlensRoutingPolicy", action);
+    case "CLAIMLENS_CREATE_VALIDATION_RULE_RESP":
+      return dispatchMutationResp(state, "createClaimlensValidationRule", action);
+    case "CLAIMLENS_UPDATE_VALIDATION_RULE_RESP":
+      return dispatchMutationResp(state, "updateClaimlensValidationRule", action);
+    case "CLAIMLENS_RUN_VALIDATION_RESP":
+      return dispatchMutationResp(state, "runClaimlensValidation", action);
+    case "CLAIMLENS_REVIEW_REGISTRY_PROPOSAL_RESP":
+      return dispatchMutationResp(state, "reviewClaimlensRegistryProposal", action);
+    case "CLAIMLENS_APPLY_REGISTRY_PROPOSAL_RESP":
+      return dispatchMutationResp(state, "applyClaimlensRegistryProposal", action);
+    case "CLAIMLENS_RESOLVE_VALIDATION_FINDING_RESP":
+      return dispatchMutationResp(state, "resolveClaimlensValidationFinding", action);
 
     default:
       return state;

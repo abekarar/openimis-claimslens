@@ -58,6 +58,109 @@ class EngineManager:
     def extract(self, image_bytes, mime_type, extraction_template):
         return self._execute_with_fallback('extract', image_bytes, mime_type, extraction_template)
 
+    def classify_routed(self, image_bytes, mime_type, document_types, language=None):
+        """Try scored engine selection for classification, fall back to primary/fallback."""
+        selected = self.select_engine(language, document_type=None)
+        if selected:
+            config, engine = selected
+            try:
+                result = engine.classify(image_bytes, mime_type, document_types)
+                if result.success:
+                    return result, config
+            except Exception as e:
+                logger.warning("Routed engine %s failed classify: %s, falling back", config.name, e)
+        return self._execute_with_fallback('classify', image_bytes, mime_type, document_types), None
+
+    def extract_routed(self, image_bytes, mime_type, extraction_template, language=None, document_type=None):
+        """Try scored engine selection for extraction, fall back to primary/fallback."""
+        selected = self.select_engine(language, document_type)
+        if selected:
+            config, engine = selected
+            try:
+                result = engine.extract(image_bytes, mime_type, extraction_template)
+                if result.success:
+                    return result, config
+            except Exception as e:
+                logger.warning("Routed engine %s failed extract: %s, falling back", config.name, e)
+        return self._execute_with_fallback('extract', image_bytes, mime_type, extraction_template), None
+
+    def select_engine(self, language=None, document_type=None):
+        """Select best engine based on EngineCapabilityScore and RoutingPolicy weights.
+
+        Returns (config, engine) tuple or None if no capability scores match.
+        """
+        if not language:
+            return None
+
+        from claimlens.models import EngineCapabilityScore, RoutingPolicy
+
+        scores_qs = EngineCapabilityScore.objects.filter(
+            is_active=True, is_deleted=False,
+            language=language,
+            engine_config__is_active=True, engine_config__is_deleted=False,
+        )
+        if document_type:
+            # Try exact document_type match first, then fall back to wildcard (null)
+            typed = scores_qs.filter(document_type=document_type)
+            if typed.exists():
+                scores_qs = typed
+            else:
+                scores_qs = scores_qs.filter(document_type__isnull=True)
+        else:
+            scores_qs = scores_qs.filter(document_type__isnull=True)
+
+        scores_list = list(scores_qs.select_related('engine_config'))
+        if not scores_list:
+            return None
+
+        policy = RoutingPolicy.objects.first()
+        acc_w = policy.accuracy_weight if policy else 0.50
+        cost_w = policy.cost_weight if policy else 0.30
+        speed_w = policy.speed_weight if policy else 0.20
+
+        # Normalize cost: find max cost to compute inverted score
+        max_cost = max(float(s.cost_per_page) for s in scores_list) or 1.0
+        if max_cost == 0:
+            max_cost = 1.0
+
+        if not self._engines:
+            self.load_engines()
+
+        engine_map = {cfg.id: (cfg, eng) for cfg, eng in self._engines}
+
+        best_score = -1
+        best_engine = None
+
+        for cap in scores_list:
+            config_id = cap.engine_config_id
+            if config_id not in engine_map:
+                continue
+
+            cfg, eng = engine_map[config_id]
+            normalized_cost = (1.0 - float(cap.cost_per_page) / max_cost) * 100
+            composite = (
+                acc_w * cap.accuracy_score
+                + cost_w * normalized_cost
+                + speed_w * cap.speed_score
+            )
+
+            if composite > best_score:
+                # Verify engine health before selecting
+                try:
+                    if eng.health_check():
+                        best_score = composite
+                        best_engine = (cfg, eng)
+                except Exception:
+                    logger.warning("Health check failed for %s during routing", cfg.name)
+
+        if best_engine:
+            logger.info(
+                "Routed to engine %s (score=%.2f) for language=%s",
+                best_engine[0].name, best_score, language
+            )
+
+        return best_engine
+
     def _execute_with_fallback(self, method_name, *args):
         if not self._engines:
             self.load_engines()

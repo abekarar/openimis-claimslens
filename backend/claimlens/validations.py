@@ -2,7 +2,10 @@ from django.core.exceptions import ValidationError
 
 from core.validation import BaseModelValidation
 from claimlens.apps import ClaimlensConfig
-from claimlens.models import Document, DocumentType, EngineConfig
+from claimlens.models import (
+    Document, DocumentType, EngineConfig,
+    EngineCapabilityScore, ValidationRule, RegistryUpdateProposal,
+)
 
 
 class DocumentValidation(BaseModelValidation):
@@ -80,3 +83,56 @@ class EngineConfigValidation(BaseModelValidation):
     def validate_update(cls, user, **data):
         super().validate_update(user, **data)
         cls.validate_create(user, **data)
+
+
+class EngineCapabilityScoreValidation(BaseModelValidation):
+    OBJECT_TYPE = EngineCapabilityScore
+
+    @classmethod
+    def validate_create(cls, user, **data):
+        super().validate_create(user, **data)
+        for field in ('accuracy_score', 'speed_score'):
+            val = data.get(field)
+            if val is not None and (val < 0 or val > 100):
+                raise ValidationError(f"{field} must be between 0 and 100")
+
+    @classmethod
+    def validate_update(cls, user, **data):
+        super().validate_update(user, **data)
+        cls.validate_create(user, **data)
+
+
+class ValidationRuleValidation(BaseModelValidation):
+    OBJECT_TYPE = ValidationRule
+
+    @classmethod
+    def validate_create(cls, user, **data):
+        super().validate_create(user, **data)
+        code = data.get('code')
+        if code and ValidationRule.objects.filter(code=code, is_deleted=False).exists():
+            raise ValidationError(f"ValidationRule with code '{code}' already exists")
+
+    @classmethod
+    def validate_update(cls, user, **data):
+        super().validate_update(user, **data)
+        code = data.get('code')
+        obj_id = data.get('id')
+        if code and ValidationRule.objects.filter(
+            code=code, is_deleted=False
+        ).exclude(id=obj_id).exists():
+            raise ValidationError(f"ValidationRule with code '{code}' already exists")
+
+
+class RegistryUpdateProposalValidation(BaseModelValidation):
+    OBJECT_TYPE = RegistryUpdateProposal
+
+    @classmethod
+    def validate_update(cls, user, **data):
+        super().validate_update(user, **data)
+        status = data.get('status')
+        if status:
+            valid = [c[0] for c in RegistryUpdateProposal.Status.choices]
+            if status not in valid:
+                raise ValidationError(
+                    f"Invalid status: {status}. Valid: {', '.join(valid)}"
+                )

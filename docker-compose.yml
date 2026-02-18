@@ -25,7 +25,7 @@ services:
 
   celery-claimlens:
     image: ghcr.io/openimis/openimis-be:${BE_TAG:-develop}
-    command: celery -A openIMIS worker -l info -Q claimlens.preprocessing,claimlens.classification,claimlens.extraction
+    command: celery -A openIMIS worker -l info -Q claimlens.preprocessing,claimlens.classification,claimlens.extraction,claimlens.validation
     environment:
       - CELERY_BROKER_URL=redis://redis-claimlens:6379/0
     depends_on:

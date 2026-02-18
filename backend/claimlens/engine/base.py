@@ -65,6 +65,7 @@ class BaseLLMEngine(ABC):
             "Respond with a JSON object containing:\n"
             '- "document_type_code": the code of the matching document type\n'
             '- "confidence": a float between 0 and 1 indicating classification confidence\n'
+            '- "language": ISO 639-1 language code of the document (e.g. "en", "fr", "sw")\n'
             '- "reasoning": brief explanation of why this classification was chosen\n\n'
             "Respond ONLY with valid JSON, no additional text."
         )

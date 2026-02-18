@@ -76,10 +76,12 @@ def classify_document(self, doc_uuid, user_id):
             return str(doc_uuid)
 
         manager = EngineManager()
-        result = manager.classify(file_bytes, doc.mime_type, doc_types)
+        result, routed_config = manager.classify_routed(file_bytes, doc.mime_type, doc_types)
 
         if result.success:
             code = result.data.get('document_type_code')
+            detected_language = result.data.get('language')
+
             doc_type = DocumentType.objects.filter(
                 code=code, is_active=True, is_deleted=False
             ).first()
@@ -87,7 +89,9 @@ def classify_document(self, doc_uuid, user_id):
             if doc_type:
                 doc.document_type = doc_type
                 doc.classification_confidence = result.confidence
-            doc.engine_config = manager.get_primary_engine_config()
+            if detected_language:
+                doc.language = detected_language
+            doc.engine_config = routed_config or manager.get_primary_engine_config()
             doc.save(user=user)
 
             AuditLog(
@@ -96,8 +100,10 @@ def classify_document(self, doc_uuid, user_id):
                 details={
                     'document_type_code': code,
                     'confidence': result.confidence,
+                    'language': detected_language,
                     'engine': result.engine_name,
                     'tokens_used': result.tokens_used,
+                    'routed': routed_config is not None,
                 },
                 engine_config=doc.engine_config,
             ).save(user=user)
@@ -145,7 +151,10 @@ def extract_document(self, doc_uuid, user_id):
             extraction_template = doc.document_type.extraction_template
 
         manager = EngineManager()
-        result = manager.extract(file_bytes, doc.mime_type, extraction_template)
+        result, routed_config = manager.extract_routed(
+            file_bytes, doc.mime_type, extraction_template,
+            language=doc.language, document_type=doc.document_type,
+        )
 
         if not result.success:
             DocumentService.update_status(doc, Document.Status.FAILED, user, result.error)
@@ -182,6 +191,10 @@ def extract_document(self, doc_uuid, user_id):
         else:
             final_status = Document.Status.FAILED
 
+        if routed_config:
+            doc.engine_config = routed_config
+            doc.save(user=user)
+
         DocumentService.update_status(doc, final_status, user)
 
         AuditLog(
@@ -194,6 +207,7 @@ def extract_document(self, doc_uuid, user_id):
                 'engine': result.engine_name,
                 'tokens_used': result.tokens_used,
                 'processing_time_ms': result.processing_time_ms,
+                'routed': routed_config is not None,
             },
             engine_config=doc.engine_config,
         ).save(user=user)
@@ -214,6 +228,46 @@ def extract_document(self, doc_uuid, user_id):
             ).save(user=user)
         except Exception:
             pass
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=1)
+def validate_upstream(self, doc_uuid, user_id):
+    from claimlens.models import Document
+    from claimlens.validation.upstream import UpstreamValidationService
+
+    try:
+        user = User.objects.get(id=user_id)
+        doc = Document.objects.get(id=doc_uuid)
+
+        service = UpstreamValidationService()
+        service.validate(doc, user)
+
+        logger.info("Upstream validation complete for document %s", doc_uuid)
+        return str(doc_uuid)
+
+    except Exception as exc:
+        logger.error("Upstream validation failed for %s: %s", doc_uuid, exc)
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=1)
+def validate_downstream(self, doc_uuid, user_id):
+    from claimlens.models import Document
+    from claimlens.validation.downstream import DownstreamValidationService
+
+    try:
+        user = User.objects.get(id=user_id)
+        doc = Document.objects.get(id=doc_uuid)
+
+        service = DownstreamValidationService()
+        service.validate(doc, user)
+
+        logger.info("Downstream validation complete for document %s", doc_uuid)
+        return str(doc_uuid)
+
+    except Exception as exc:
+        logger.error("Downstream validation failed for %s: %s", doc_uuid, exc)
         raise self.retry(exc=exc)
 
 
