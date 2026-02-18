@@ -1,3 +1,10 @@
+# ClaimLens infrastructure services (MinIO, Redis, Celery worker).
+# Intended to run alongside the openimis-dev-tools compose.yml, which provides
+# the database and backend services. The celery-claimlens worker uses the
+# openIMIS backend image and requires DB environment variables (DB_HOST, DB_PORT,
+# DB_NAME, DB_USER, DB_PASSWORD) — these are inherited when used with
+# docker compose -f ../openimis-dev-tools/compose.yml -f docker-compose.yml up.
+
 services:
   minio:
     image: minio/minio:latest

@@ -55,6 +55,21 @@ const DEFAULT_CONFIG = {
   ],
 };
 
+export {
+  fetchDocuments,
+  fetchDocument,
+  fetchExtractionResult,
+  fetchDocumentTypes,
+  fetchEngineConfigs,
+  fetchAuditLogs,
+  processDocument,
+  createDocumentType,
+  updateDocumentType,
+  createEngineConfig,
+  updateEngineConfig,
+  uploadDocument,
+} from "./actions";
+
 export const ClaimLensModule = (cfg) => {
   return { ...DEFAULT_CONFIG, ...cfg };
 };

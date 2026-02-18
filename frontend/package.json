@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "license": "AGPL-3.0-only",
   "description": "openIMIS Frontend ClaimLens module — AI-powered OCR extraction from scanned claim documents",
-  "repository": "abekarar/openimis-fe-claimlens_js",
+  "repository": "abekarar/openimis-claimslens",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
   "engines": {

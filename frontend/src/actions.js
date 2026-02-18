@@ -148,9 +148,9 @@ export function processDocument(uuid, clientMutationLabel) {
 }
 
 export function createDocumentType(data, clientMutationLabel) {
-  const fields = [];
-  if (data.code) fields.push(`code: "${data.code}"`);
-  if (data.name) fields.push(`name: "${data.name}"`);
+  if (data.code == null) throw new Error("createDocumentType: code is required");
+  if (data.name == null) throw new Error("createDocumentType: name is required");
+  const fields = [`code: "${data.code}"`, `name: "${data.name}"`];
   if (data.extractionTemplate) fields.push(`extractionTemplate: ${JSON.stringify(JSON.stringify(data.extractionTemplate))}`);
   if (data.fieldDefinitions) fields.push(`fieldDefinitions: ${JSON.stringify(JSON.stringify(data.fieldDefinitions))}`);
   if (data.classificationHints) fields.push(`classificationHints: "${data.classificationHints}"`);
@@ -165,6 +165,103 @@ export function createDocumentType(data, clientMutationLabel) {
   return graphql(
     mutation.payload,
     ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_CREATE_DOCUMENT_TYPE_RESP", "CLAIMLENS_MUTATION_ERR"],
+    {
+      clientMutationId: mutation.clientMutationId,
+      clientMutationLabel,
+      requestedDateTime,
+    }
+  );
+}
+
+export function updateDocumentType(data, clientMutationLabel) {
+  if (data.id == null) throw new Error("updateDocumentType: id is required");
+  const fields = [`id: "${data.id}"`];
+  if (data.code) fields.push(`code: "${data.code}"`);
+  if (data.name) fields.push(`name: "${data.name}"`);
+  if (data.extractionTemplate) fields.push(`extractionTemplate: ${JSON.stringify(JSON.stringify(data.extractionTemplate))}`);
+  if (data.fieldDefinitions) fields.push(`fieldDefinitions: ${JSON.stringify(JSON.stringify(data.fieldDefinitions))}`);
+  if (data.classificationHints) fields.push(`classificationHints: "${data.classificationHints}"`);
+  if (data.isActive !== undefined) fields.push(`isActive: ${data.isActive}`);
+
+  const mutation = formatMutation(
+    "updateClaimlensDocumentType",
+    fields.join(", "),
+    clientMutationLabel
+  );
+  const requestedDateTime = new Date();
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_UPDATE_DOCUMENT_TYPE_RESP", "CLAIMLENS_MUTATION_ERR"],
+    {
+      clientMutationId: mutation.clientMutationId,
+      clientMutationLabel,
+      requestedDateTime,
+    }
+  );
+}
+
+export function createEngineConfig(data, clientMutationLabel) {
+  if (data.name == null) throw new Error("createEngineConfig: name is required");
+  if (data.adapter == null) throw new Error("createEngineConfig: adapter is required");
+  if (data.endpointUrl == null) throw new Error("createEngineConfig: endpointUrl is required");
+  if (data.modelName == null) throw new Error("createEngineConfig: modelName is required");
+  const fields = [
+    `name: "${data.name}"`,
+    `adapter: "${data.adapter}"`,
+    `endpointUrl: "${data.endpointUrl}"`,
+    `modelName: "${data.modelName}"`,
+  ];
+  if (data.apiKey) fields.push(`apiKey: "${data.apiKey}"`);
+  if (data.deploymentMode) fields.push(`deploymentMode: "${data.deploymentMode}"`);
+  if (data.isPrimary !== undefined) fields.push(`isPrimary: ${data.isPrimary}`);
+  if (data.isFallback !== undefined) fields.push(`isFallback: ${data.isFallback}`);
+  if (data.isActive !== undefined) fields.push(`isActive: ${data.isActive}`);
+  if (data.maxTokens !== undefined) fields.push(`maxTokens: ${data.maxTokens}`);
+  if (data.temperature !== undefined) fields.push(`temperature: ${data.temperature}`);
+  if (data.timeoutSeconds !== undefined) fields.push(`timeoutSeconds: ${data.timeoutSeconds}`);
+
+  const mutation = formatMutation(
+    "createClaimlensEngineConfig",
+    fields.join(", "),
+    clientMutationLabel
+  );
+  const requestedDateTime = new Date();
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_CREATE_ENGINE_CONFIG_RESP", "CLAIMLENS_MUTATION_ERR"],
+    {
+      clientMutationId: mutation.clientMutationId,
+      clientMutationLabel,
+      requestedDateTime,
+    }
+  );
+}
+
+export function updateEngineConfig(data, clientMutationLabel) {
+  if (data.id == null) throw new Error("updateEngineConfig: id is required");
+  const fields = [`id: "${data.id}"`];
+  if (data.name) fields.push(`name: "${data.name}"`);
+  if (data.adapter) fields.push(`adapter: "${data.adapter}"`);
+  if (data.endpointUrl) fields.push(`endpointUrl: "${data.endpointUrl}"`);
+  if (data.apiKey) fields.push(`apiKey: "${data.apiKey}"`);
+  if (data.modelName) fields.push(`modelName: "${data.modelName}"`);
+  if (data.deploymentMode) fields.push(`deploymentMode: "${data.deploymentMode}"`);
+  if (data.isPrimary !== undefined) fields.push(`isPrimary: ${data.isPrimary}`);
+  if (data.isFallback !== undefined) fields.push(`isFallback: ${data.isFallback}`);
+  if (data.isActive !== undefined) fields.push(`isActive: ${data.isActive}`);
+  if (data.maxTokens !== undefined) fields.push(`maxTokens: ${data.maxTokens}`);
+  if (data.temperature !== undefined) fields.push(`temperature: ${data.temperature}`);
+  if (data.timeoutSeconds !== undefined) fields.push(`timeoutSeconds: ${data.timeoutSeconds}`);
+
+  const mutation = formatMutation(
+    "updateClaimlensEngineConfig",
+    fields.join(", "),
+    clientMutationLabel
+  );
+  const requestedDateTime = new Date();
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_UPDATE_ENGINE_CONFIG_RESP", "CLAIMLENS_MUTATION_ERR"],
     {
       clientMutationId: mutation.clientMutationId,
       clientMutationLabel,

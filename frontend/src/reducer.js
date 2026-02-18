@@ -236,6 +236,12 @@ function reducer(state = initialState, action) {
       return dispatchMutationResp(state, "processClaimlensDocument", action);
     case "CLAIMLENS_CREATE_DOCUMENT_TYPE_RESP":
       return dispatchMutationResp(state, "createClaimlensDocumentType", action);
+    case "CLAIMLENS_UPDATE_DOCUMENT_TYPE_RESP":
+      return dispatchMutationResp(state, "updateClaimlensDocumentType", action);
+    case "CLAIMLENS_CREATE_ENGINE_CONFIG_RESP":
+      return dispatchMutationResp(state, "createClaimlensEngineConfig", action);
+    case "CLAIMLENS_UPDATE_ENGINE_CONFIG_RESP":
+      return dispatchMutationResp(state, "updateClaimlensEngineConfig", action);
 
     default:
       return state;
