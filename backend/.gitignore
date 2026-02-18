@@ -1,7 +1,9 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Distribution / packaging
 *.egg-info/
 *.egg
 .eggs/
@@ -13,11 +15,6 @@ build/
 venv/
 ENV/
 
-# Node
-node_modules/
-*.log
-npm-debug.log*
-
 # IDE
 .idea/
 .vscode/
@@ -27,6 +24,3 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
-
-# Environment
-.env
