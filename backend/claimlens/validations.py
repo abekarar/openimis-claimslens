@@ -5,6 +5,7 @@ from claimlens.apps import ClaimlensConfig
 from claimlens.models import (
     Document, DocumentType, EngineConfig,
     EngineCapabilityScore, ValidationRule, RegistryUpdateProposal,
+    EngineRoutingRule,
 )
 
 
@@ -136,3 +137,22 @@ class RegistryUpdateProposalValidation(BaseModelValidation):
                 raise ValidationError(
                     f"Invalid status: {status}. Valid: {', '.join(valid)}"
                 )
+
+
+class EngineRoutingRuleValidation(BaseModelValidation):
+    OBJECT_TYPE = EngineRoutingRule
+
+    @classmethod
+    def validate_create(cls, user, **data):
+        super().validate_create(user, **data)
+        priority = data.get('priority')
+        if priority is not None and (priority < 0 or priority > 100):
+            raise ValidationError("priority must be between 0 and 100")
+        min_conf = data.get('min_confidence')
+        if min_conf is not None and (min_conf < 0.0 or min_conf > 1.0):
+            raise ValidationError("min_confidence must be between 0.0 and 1.0")
+
+    @classmethod
+    def validate_update(cls, user, **data):
+        super().validate_update(user, **data)
+        cls.validate_create(user, **data)

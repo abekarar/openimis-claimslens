@@ -8,11 +8,13 @@ from claimlens.apps import ClaimlensConfig
 from claimlens.models import (
     Document, DocumentType, EngineConfig, DocumentMutation,
     EngineCapabilityScore, ValidationRule, ValidationFinding, RegistryUpdateProposal,
+    EngineRoutingRule, AuditLog,
 )
 from claimlens.services import (
     DocumentService, DocumentTypeService, EngineConfigService,
     EngineCapabilityScoreService, RoutingPolicyService,
     ValidationRuleService, RegistryUpdateProposalService,
+    ModuleConfigService, EngineRoutingRuleService,
 )
 
 
@@ -103,6 +105,30 @@ class ApplyRegistryProposalInput(OpenIMISMutation.Input):
 class ResolveValidationFindingInput(OpenIMISMutation.Input):
     id = graphene.UUID(required=True)
     resolution_status = graphene.String(required=True)
+
+
+class UpdateClaimlensModuleConfigInput(OpenIMISMutation.Input):
+    auto_approve_threshold = graphene.Float(required=False)
+    review_threshold = graphene.Float(required=False)
+
+
+class LinkDocumentToClaimInput(OpenIMISMutation.Input):
+    document_uuid = graphene.UUID(required=True)
+    claim_uuid = graphene.UUID(required=True)
+
+
+class CreateEngineRoutingRuleInput(OpenIMISMutation.Input):
+    name = graphene.String(required=True)
+    engine_config_id = graphene.UUID(required=True)
+    language = graphene.String(required=False)
+    document_type_id = graphene.UUID(required=False)
+    min_confidence = graphene.Float(required=False)
+    priority = graphene.Int(required=False)
+    is_active = graphene.Boolean(required=False)
+
+
+class UpdateEngineRoutingRuleInput(CreateEngineRoutingRuleInput):
+    id = graphene.UUID(required=True)
 
 
 # --- Existing mutations ---
@@ -497,6 +523,130 @@ class ResolveValidationFindingMutation(OpenIMISMutation):
             finding = ValidationFinding.objects.get(id=data['id'], is_deleted=False)
             finding.resolution_status = data['resolution_status']
             finding.save(user=user)
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class UpdateModuleConfigMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "UpdateModuleConfigMutation"
+
+    class Input(UpdateClaimlensModuleConfigInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_manage_module_config_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            service = ModuleConfigService(user)
+            result = service.update_thresholds(data)
+            if not result.get('success'):
+                return [{"message": result.get('detail', 'Update failed')}]
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class LinkDocumentToClaimMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "LinkDocumentToClaimMutation"
+
+    class Input(LinkDocumentToClaimInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_process_document_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            doc = Document.objects.get(id=data['document_uuid'], is_deleted=False)
+            claim_uuid = data['claim_uuid']
+
+            # Verify claim exists if claim module is installed
+            try:
+                from claim.models import Claim
+                if not Claim.objects.filter(uuid=claim_uuid).exists():
+                    return [{"message": f"Claim with UUID {claim_uuid} not found"}]
+            except ImportError:
+                pass  # claim module not installed — skip verification
+
+            doc.claim_uuid = claim_uuid
+            doc.save(user=user)
+
+            AuditLog(
+                document=doc,
+                action=AuditLog.Action.STATUS_CHANGE,
+                details={'action': 'link_to_claim', 'claim_uuid': str(claim_uuid)},
+            ).save(user=user)
+
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class CreateEngineRoutingRuleMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "CreateEngineRoutingRuleMutation"
+
+    class Input(CreateEngineRoutingRuleInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_manage_routing_rules_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            service = EngineRoutingRuleService(user)
+            result = service.create(data)
+            if not result.get('success'):
+                return [{"message": result.get('detail', 'Create failed')}]
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class UpdateEngineRoutingRuleMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "UpdateEngineRoutingRuleMutation"
+
+    class Input(UpdateEngineRoutingRuleInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_manage_routing_rules_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            service = EngineRoutingRuleService(user)
+            result = service.update(data)
+            if not result.get('success'):
+                return [{"message": result.get('detail', 'Update failed')}]
             return None
         except Exception as exc:
             return [{"message": str(exc)}]

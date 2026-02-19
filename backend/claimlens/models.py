@@ -181,6 +181,39 @@ class RoutingPolicy(HistoryModel):
         verbose_name_plural = "Routing policies"
 
 
+class EngineRoutingRule(HistoryModel):
+    class Priority(models.IntegerChoices):
+        LOW = 10, _('Low')
+        MEDIUM = 50, _('Medium')
+        HIGH = 90, _('High')
+        OVERRIDE = 100, _('Override')
+
+    name = models.CharField(max_length=255)
+    engine_config = models.ForeignKey(
+        EngineConfig, on_delete=models.DO_NOTHING, related_name='routing_rules'
+    )
+    language = models.CharField(
+        max_length=10, null=True, blank=True,
+        help_text="Match language (null=any)"
+    )
+    document_type = models.ForeignKey(
+        DocumentType, on_delete=models.DO_NOTHING, null=True, blank=True,
+        related_name='routing_rules'
+    )
+    min_confidence = models.FloatField(
+        default=0.0,
+        help_text="Only use this engine if its historical accuracy >= this value"
+    )
+    priority = models.IntegerField(
+        default=50,
+        help_text="Higher priority rules win. 100=override composite scoring."
+    )
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"RoutingRule: {self.name} → {self.engine_config.name} (priority={self.priority})"
+
+
 class ValidationResult(HistoryModel):
     class ValidationType(models.TextChoices):
         UPSTREAM = 'upstream', _('Upstream')

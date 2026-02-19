@@ -225,6 +225,18 @@ def extract_document(self, doc_uuid, user_id):
             engine_config=doc.engine_config,
         ).save(user=user)
 
+        # Auto-update capability scores with extraction feedback
+        if doc.language:
+            from claimlens.services import EngineCapabilityScoreService
+            EngineCapabilityScoreService.record_extraction_result(
+                engine_config=doc.engine_config,
+                language=doc.language,
+                document_type=doc.document_type,
+                confidence=aggregate_confidence,
+                processing_time_ms=result.processing_time_ms,
+                user=user,
+            )
+
         logger.info("Extraction complete for document %s → %s", doc_uuid, final_status)
         return str(doc_uuid)
 

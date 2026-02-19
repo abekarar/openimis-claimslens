@@ -14,11 +14,12 @@ from claimlens.apps import ClaimlensConfig
 from claimlens.models import (
     Document, DocumentType, EngineConfig, AuditLog, ExtractionResult,
     EngineCapabilityScore, RoutingPolicy, ValidationRule, ValidationResult,
-    ValidationFinding, RegistryUpdateProposal,
+    ValidationFinding, RegistryUpdateProposal, EngineRoutingRule,
 )
 from claimlens.validations import (
     DocumentValidation, DocumentTypeValidation, EngineConfigValidation,
     EngineCapabilityScoreValidation, ValidationRuleValidation, RegistryUpdateProposalValidation,
+    EngineRoutingRuleValidation,
 )
 
 logger = logging.getLogger(__name__)
@@ -208,6 +209,37 @@ class EngineCapabilityScoreService(BaseService):
     def update(self, obj_data):
         return super().update(obj_data)
 
+    @staticmethod
+    def record_extraction_result(engine_config, language, document_type,
+                                 confidence, processing_time_ms, user):
+        """Update capability scores using exponential moving average after extraction."""
+        ALPHA = 0.2  # EMA smoothing factor — recent results have 20% weight
+
+        score, created = EngineCapabilityScore.objects.get_or_create(
+            engine_config=engine_config,
+            language=language,
+            document_type=document_type,
+            defaults={'accuracy_score': 50, 'speed_score': 50, 'is_active': True}
+        )
+
+        # Map confidence (0-1) to score (0-100)
+        new_accuracy = int(confidence * 100)
+        # Map processing_time_ms to speed score: <5s=100, >60s=0, linear between
+        new_speed = max(0, min(100, int(100 - (processing_time_ms - 5000) / 550)))
+
+        if created:
+            score.accuracy_score = new_accuracy
+            score.speed_score = new_speed
+        else:
+            score.accuracy_score = int(ALPHA * new_accuracy + (1 - ALPHA) * score.accuracy_score)
+            score.speed_score = int(ALPHA * new_speed + (1 - ALPHA) * score.speed_score)
+
+        score.save(user=user)
+        logger.info(
+            "Updated capability score for %s [%s]: accuracy=%d, speed=%d",
+            engine_config.name, language, score.accuracy_score, score.speed_score,
+        )
+
 
 class RoutingPolicyService:
     """Handles singleton RoutingPolicy updates."""
@@ -249,6 +281,41 @@ class ValidationRuleService(BaseService):
     @register_service_signal('claimlens.validation_rule.update')
     def update(self, obj_data):
         return super().update(obj_data)
+
+
+class ModuleConfigService:
+    """Handles updating module-level thresholds via ModuleConfiguration."""
+
+    def __init__(self, user):
+        self.user = user
+
+    def update_thresholds(self, data):
+        try:
+            from core.models import ModuleConfiguration
+
+            cfg = ModuleConfiguration.objects.get(module='claimlens')
+            config = cfg.config or {}
+
+            if 'auto_approve_threshold' in data:
+                config['auto_approve_threshold'] = data['auto_approve_threshold']
+            if 'review_threshold' in data:
+                config['review_threshold'] = data['review_threshold']
+
+            cfg.config = config
+            cfg.save()
+
+            # Reload into ClaimlensConfig
+            ClaimlensConfig.auto_approve_threshold = config.get('auto_approve_threshold', 0.90)
+            ClaimlensConfig.review_threshold = config.get('review_threshold', 0.60)
+
+            return output_result_success(dict_representation={
+                'auto_approve_threshold': ClaimlensConfig.auto_approve_threshold,
+                'review_threshold': ClaimlensConfig.review_threshold,
+            })
+        except Exception as exc:
+            return output_exception(
+                model_name='ModuleConfiguration', method='update_thresholds', exception=exc
+            )
 
 
 class RegistryUpdateProposalService:
@@ -323,3 +390,18 @@ class RegistryUpdateProposalService:
             return output_exception(
                 model_name='RegistryUpdateProposal', method='apply', exception=exc
             )
+
+
+class EngineRoutingRuleService(BaseService):
+    OBJECT_TYPE = EngineRoutingRule
+
+    def __init__(self, user, validation_class=EngineRoutingRuleValidation):
+        super().__init__(user, validation_class)
+
+    @register_service_signal('claimlens.routing_rule.create')
+    def create(self, obj_data):
+        return super().create(obj_data)
+
+    @register_service_signal('claimlens.routing_rule.update')
+    def update(self, obj_data):
+        return super().update(obj_data)

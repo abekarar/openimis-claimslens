@@ -13,6 +13,7 @@ from claimlens.gql_queries import (
     EngineCapabilityScoreGQLType, RoutingPolicyGQLType,
     ValidationResultGQLType, ValidationRuleGQLType,
     ValidationFindingGQLType, RegistryUpdateProposalGQLType,
+    EngineRoutingRuleGQLType,
 )
 from claimlens.gql_mutations import (
     ProcessDocumentMutation, CreateDocumentTypeMutation,
@@ -24,11 +25,13 @@ from claimlens.gql_mutations import (
     RunValidationMutation,
     ReviewRegistryProposalMutation, ApplyRegistryProposalMutation,
     ResolveValidationFindingMutation,
+    UpdateModuleConfigMutation, LinkDocumentToClaimMutation,
+    CreateEngineRoutingRuleMutation, UpdateEngineRoutingRuleMutation,
 )
 from claimlens.models import (
     Document, DocumentType, EngineConfig, ExtractionResult, AuditLog,
     EngineCapabilityScore, RoutingPolicy, ValidationResult, ValidationRule,
-    ValidationFinding, RegistryUpdateProposal,
+    ValidationFinding, RegistryUpdateProposal, EngineRoutingRule,
 )
 
 
@@ -91,6 +94,10 @@ class Query(graphene.ObjectType):
         RegistryUpdateProposalGQLType,
         orderBy=graphene.List(of_type=graphene.String),
         document_uuid=graphene.UUID(),
+    )
+    claimlens_engine_routing_rules = OrderedDjangoFilterConnectionField(
+        EngineRoutingRuleGQLType,
+        orderBy=graphene.List(of_type=graphene.String),
     )
 
     # --- Existing resolvers ---
@@ -184,6 +191,11 @@ class Query(graphene.ObjectType):
         query = RegistryUpdateProposal.objects.filter(*filters)
         return gql_optimizer.query(query, info)
 
+    def resolve_claimlens_engine_routing_rules(self, info, **kwargs):
+        _check_permissions(info.context.user, ClaimlensConfig.gql_query_routing_rules_perms)
+        query = EngineRoutingRule.objects.filter(is_deleted=False)
+        return gql_optimizer.query(query, info)
+
 
 class Mutation(graphene.ObjectType):
     process_claimlens_document = ProcessDocumentMutation.Field()
@@ -200,6 +212,10 @@ class Mutation(graphene.ObjectType):
     review_claimlens_registry_proposal = ReviewRegistryProposalMutation.Field()
     apply_claimlens_registry_proposal = ApplyRegistryProposalMutation.Field()
     resolve_claimlens_validation_finding = ResolveValidationFindingMutation.Field()
+    update_claimlens_module_config = UpdateModuleConfigMutation.Field()
+    link_claimlens_document_to_claim = LinkDocumentToClaimMutation.Field()
+    create_claimlens_engine_routing_rule = CreateEngineRoutingRuleMutation.Field()
+    update_claimlens_engine_routing_rule = UpdateEngineRoutingRuleMutation.Field()
 
 
 def _check_permissions(user, perms):

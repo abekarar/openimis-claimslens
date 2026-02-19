@@ -22,6 +22,9 @@ DEFAULT_CFG = {
     "gql_mutation_manage_capability_scores_perms": ["159016"],
     "gql_query_routing_policy_perms": ["159017"],
     "gql_mutation_manage_routing_policy_perms": ["159018"],
+    "gql_mutation_manage_module_config_perms": ["159019"],
+    "gql_mutation_manage_routing_rules_perms": ["159020"],
+    "gql_query_routing_rules_perms": ["159021"],
 
     # Confidence thresholds
     "auto_approve_threshold": 0.90,
@@ -79,6 +82,9 @@ class ClaimlensConfig(AppConfig):
     gql_mutation_manage_capability_scores_perms = []
     gql_query_routing_policy_perms = []
     gql_mutation_manage_routing_policy_perms = []
+    gql_mutation_manage_module_config_perms = []
+    gql_mutation_manage_routing_rules_perms = []
+    gql_query_routing_rules_perms = []
 
     # Confidence thresholds
     auto_approve_threshold = None

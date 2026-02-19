@@ -83,14 +83,65 @@ class EngineManager:
         return self._execute_with_fallback('extract', image_bytes, mime_type, extraction_template), None
 
     def select_engine(self, language=None, document_type=None):
-        """Select best engine based on EngineCapabilityScore and RoutingPolicy weights.
+        """Select best engine based on routing rules, then EngineCapabilityScore weights.
 
         Returns (config, engine) tuple or None if no capability scores match.
         """
         if not language:
             return None
 
-        from claimlens.models import EngineCapabilityScore, RoutingPolicy
+        if not self._engines:
+            self.load_engines()
+
+        engine_map = {cfg.id: (cfg, eng) for cfg, eng in self._engines}
+
+        # Check explicit routing rules first (highest priority wins)
+        from claimlens.models import EngineRoutingRule
+        from django.db.models import Q as RuleQ
+
+        rules = EngineRoutingRule.objects.filter(
+            is_active=True, is_deleted=False,
+            engine_config__is_active=True, engine_config__is_deleted=False,
+        ).order_by('-priority')
+
+        rules = rules.filter(RuleQ(language=language) | RuleQ(language__isnull=True))
+        if document_type:
+            rules = rules.filter(RuleQ(document_type=document_type) | RuleQ(document_type__isnull=True))
+
+        from claimlens.models import EngineCapabilityScore
+
+        for rule in rules:
+            config_id = rule.engine_config_id
+            if config_id not in engine_map:
+                continue
+
+            # Enforce min_confidence against historical accuracy
+            if rule.min_confidence > 0:
+                cap = EngineCapabilityScore.objects.filter(
+                    engine_config_id=config_id,
+                    language=language,
+                    is_active=True, is_deleted=False,
+                ).first()
+                if not cap or (cap.accuracy_score / 100.0) < rule.min_confidence:
+                    logger.debug(
+                        "Rule '%s' skipped: engine %s accuracy below min_confidence %.2f",
+                        rule.name, engine_map[config_id][0].name, rule.min_confidence,
+                    )
+                    continue
+
+            cfg, eng = engine_map[config_id]
+            try:
+                if eng.health_check():
+                    logger.info(
+                        "Rule '%s' selected engine %s (priority=%d)",
+                        rule.name, cfg.name, rule.priority,
+                    )
+                    return (cfg, eng)
+            except Exception:
+                logger.warning("Health check failed for rule-selected engine %s", cfg.name)
+
+        # Fall through to composite scoring
+        from claimlens.models import RoutingPolicy
 
         scores_qs = EngineCapabilityScore.objects.filter(
             is_active=True, is_deleted=False,
@@ -120,11 +171,6 @@ class EngineManager:
         max_cost = max(float(s.cost_per_page) for s in scores_list) or 1.0
         if max_cost == 0:
             max_cost = 1.0
-
-        if not self._engines:
-            self.load_engines()
-
-        engine_map = {cfg.id: (cfg, eng) for cfg, eng in self._engines}
 
         best_score = -1
         best_engine = None

@@ -6,7 +6,7 @@ from claimlens.apps import ClaimlensConfig
 from claimlens.models import (
     Document, DocumentType, EngineConfig, ExtractionResult, AuditLog,
     EngineCapabilityScore, RoutingPolicy, ValidationResult, ValidationRule,
-    ValidationFinding, RegistryUpdateProposal,
+    ValidationFinding, RegistryUpdateProposal, EngineRoutingRule,
 )
 
 
@@ -205,6 +205,22 @@ class ValidationRuleGQLType(DjangoObjectType):
             "code": ["exact", "icontains"],
             "rule_type": ["exact"],
             "severity": ["exact"],
+            "is_active": ["exact"],
+            "is_deleted": ["exact"],
+        }
+        connection_class = ExtendedConnection
+
+
+class EngineRoutingRuleGQLType(DjangoObjectType):
+    uuid = graphene.String(source='uuid')
+
+    class Meta:
+        model = EngineRoutingRule
+        interfaces = (graphene.relay.Node,)
+        filter_fields = {
+            "id": ["exact"],
+            "language": ["exact"],
+            "priority": ["exact", "lt", "lte", "gt", "gte"],
             "is_active": ["exact"],
             "is_deleted": ["exact"],
         }
