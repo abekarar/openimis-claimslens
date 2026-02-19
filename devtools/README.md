@@ -27,6 +27,7 @@ ln -s ~/projects/openimis-claimslens/frontend ~/projects/openimis-dev-tools/fron
 cp compose.yml compose-version.yml .env.example ~/projects/openimis-dev-tools/
 cp craco.config.js ~/projects/openimis-dev-tools/frontend/
 cp entrypoint-dev.sh ~/projects/openimis-dev-tools/frontend/script/
+cp setupProxy.js ~/projects/openimis-dev-tools/frontend/src/
 ```
 
 3. Create your `.env` from the example:
