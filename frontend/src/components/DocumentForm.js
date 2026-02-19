@@ -3,7 +3,7 @@ import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
-import { Button, CircularProgress, Grid, Typography, Box } from "@material-ui/core";
+import { Button, Chip, CircularProgress, Grid, Typography, Box } from "@material-ui/core";
 import { NavigateNext } from "@material-ui/icons";
 import {
   withModulesManager,
@@ -68,12 +68,22 @@ const styles = (theme) => ({
     padding: theme.spacing(3),
     textAlign: "center",
   },
+  sectionNav: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: theme.spacing(1),
+    marginBottom: theme.spacing(2),
+  },
+  sectionChip: {
+    cursor: "pointer",
+  },
 });
 
 class DocumentForm extends Component {
   state = {
     pollCount: 0,
     linkClaimOpen: false,
+    confirmedAction: null,
   };
 
   componentDidMount() {
@@ -85,7 +95,7 @@ class DocumentForm extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { document: doc } = this.props;
+    const { document: doc, confirmed } = this.props;
 
     if (doc && !prevProps.document) {
       this.startPollingIfNeeded();
@@ -99,6 +109,10 @@ class DocumentForm extends Component {
       if (TERMINAL_STATUSES.includes(doc.status)) {
         this.stopPolling();
       }
+    }
+
+    if (confirmed !== prevProps.confirmed && !!confirmed) {
+      this.onConfirmAction();
     }
   }
 
@@ -138,8 +152,29 @@ class DocumentForm extends Component {
   }
 
   handleProcess = () => {
+    const { intl } = this.props;
+    this.setState({ confirmedAction: "process" });
+    this.props.coreConfirm(
+      formatMessage(intl, "claimlens", "confirm.process.title"),
+      formatMessage(intl, "claimlens", "confirm.process.message")
+    );
+  };
+
+  handleRunValidation = () => {
+    const { intl } = this.props;
+    this.setState({ confirmedAction: "validate" });
+    this.props.coreConfirm(
+      formatMessage(intl, "claimlens", "confirm.validate.title"),
+      formatMessage(intl, "claimlens", "confirm.validate.message")
+    );
+  };
+
+  onConfirmAction = () => {
+    const { confirmedAction } = this.state;
     const { document: doc, intl } = this.props;
-    if (doc) {
+    if (!doc) return;
+
+    if (confirmedAction === "process") {
       this.props.processDocument(
         doc.uuid,
         formatMessage(intl, "claimlens", "action.process")
@@ -151,17 +186,13 @@ class DocumentForm extends Component {
         );
         this.startPollingIfNeeded();
       }, 1000);
-    }
-  };
-
-  handleRunValidation = () => {
-    const { document: doc, intl } = this.props;
-    if (doc) {
+    } else if (confirmedAction === "validate") {
       this.props.runValidation(
         doc.uuid,
         formatMessage(intl, "claimlens", "action.runValidation")
       );
     }
+    this.setState({ confirmedAction: null });
   };
 
   handleResolveFinding = (findingId, resolutionStatus) => {
@@ -195,6 +226,11 @@ class DocumentForm extends Component {
     if (saved) {
       this.props.fetchDocument(this.props.modulesManager, this.props.document_uuid);
     }
+  };
+
+  scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
   gatherFindings(validationResults) {
@@ -261,6 +297,59 @@ class DocumentForm extends Component {
             />
           </Grid>
           <Grid item xs={12} md={6}>
+            <div className={classes.sectionNav}>
+              <Chip
+                label={formatMessage(intl, "claimlens", "section.metadata")}
+                className={classes.sectionChip}
+                onClick={() => this.scrollToSection("section-metadata")}
+                variant="outlined"
+                size="small"
+              />
+              {doc.extractionResult && (
+                <Chip
+                  label={formatMessage(intl, "claimlens", "section.extraction")}
+                  className={classes.sectionChip}
+                  onClick={() => this.scrollToSection("section-extraction")}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {doc.validationResults && doc.validationResults.length > 0 && (
+                <Chip
+                  label={formatMessage(intl, "claimlens", "section.validation")}
+                  className={classes.sectionChip}
+                  onClick={() => this.scrollToSection("section-validation")}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {findings.length > 0 && (
+                <Chip
+                  label={formatMessage(intl, "claimlens", "section.findings")}
+                  className={classes.sectionChip}
+                  onClick={() => this.scrollToSection("section-findings")}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              {proposals.length > 0 && (
+                <Chip
+                  label={formatMessage(intl, "claimlens", "section.registry")}
+                  className={classes.sectionChip}
+                  onClick={() => this.scrollToSection("section-registry")}
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+              <Chip
+                label={formatMessage(intl, "claimlens", "section.auditLog")}
+                className={classes.sectionChip}
+                onClick={() => this.scrollToSection("section-auditlog")}
+                variant="outlined"
+                size="small"
+              />
+            </div>
+
             {canProcess && (
               <div className={classes.actions}>
                 <Button
@@ -324,27 +413,39 @@ class DocumentForm extends Component {
             )}
 
             <ProcessingTimeline status={doc.status} />
-            <DocumentMetadataPanel document={doc} />
+            <div id="section-metadata">
+              <DocumentMetadataPanel document={doc} />
+            </div>
             {doc.extractionResult && (
-              <ExtractionResultPanel extractionResult={doc.extractionResult} />
+              <div id="section-extraction">
+                <ExtractionResultPanel extractionResult={doc.extractionResult} />
+              </div>
             )}
             {doc.validationResults && doc.validationResults.length > 0 && (
-              <ValidationResultPanel validationResults={doc.validationResults} />
+              <div id="section-validation">
+                <ValidationResultPanel validationResults={doc.validationResults} />
+              </div>
             )}
             {findings.length > 0 && (
-              <ValidationFindingsPanel
-                findings={findings}
-                onResolveFinding={this.handleResolveFinding}
-              />
+              <div id="section-findings">
+                <ValidationFindingsPanel
+                  findings={findings}
+                  onResolveFinding={this.handleResolveFinding}
+                />
+              </div>
             )}
             {proposals.length > 0 && (
-              <RegistryUpdatePanel
-                proposals={proposals}
-                onReviewProposal={this.handleReviewProposal}
-                onApplyProposal={this.handleApplyProposal}
-              />
+              <div id="section-registry">
+                <RegistryUpdatePanel
+                  proposals={proposals}
+                  onReviewProposal={this.handleReviewProposal}
+                  onApplyProposal={this.handleApplyProposal}
+                />
+              </div>
             )}
-            <AuditLogPanel auditLogs={this.props.auditLogs} />
+            <div id="section-auditlog">
+              <AuditLogPanel auditLogs={this.props.auditLogs} />
+            </div>
           </Grid>
         </Grid>
 
@@ -363,6 +464,7 @@ const mapStateToProps = (state) => ({
   fetchingDocument: state.claimlens.fetchingDocument,
   submittingMutation: state.claimlens.submittingMutation,
   auditLogs: state.claimlens.auditLogs,
+  confirmed: state.core.confirmed,
 });
 
 const mapDispatchToProps = (dispatch) =>

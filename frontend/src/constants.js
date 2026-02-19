@@ -150,3 +150,4 @@ export const ROUTE_CLAIMLENS_DOCUMENT = "claimlens/documents/document";
 export const ROUTE_CLAIMLENS_UPLOAD = "claimlens/upload";
 export const ROUTE_CLAIMLENS_VALIDATION_RULE = "claimlens/validation-rules/rule";
 export const ROUTE_CLAIMLENS_SETTINGS = "claimlens/settings";
+export const ROUTE_CLAIMLENS_DASHBOARD = "claimlens/dashboard";

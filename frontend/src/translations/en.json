@@ -4,6 +4,7 @@
   "claimlens.menu.upload": "Upload Document",
   "claimlens.menu.modelRouting": "Model Routing",
   "claimlens.menu.validationRules": "Validation Rules",
+  "claimlens.menu.dashboard": "Dashboard",
   "claimlens.menu.settings": "Settings",
   "claimlens.menu.documentTypes": "Document Types",
   "claimlens.menu.engineConfigs": "Engine Configs",
@@ -46,6 +47,8 @@
   "claimlens.document.errorMessage": "Error",
   "claimlens.document.language": "Language",
   "claimlens.document.claimUuid": "Linked Claim UUID",
+  "claimlens.document.engineConfig": "Engine Configuration",
+  "claimlens.document.download": "Download Original",
 
   "claimlens.extraction.title": "Extraction Results",
   "claimlens.extraction.field": "Field",
@@ -55,6 +58,8 @@
   "claimlens.extraction.processingTime": "Processing Time",
   "claimlens.extraction.tokensUsed": "Tokens Used",
   "claimlens.extraction.fields": "Extracted Fields",
+  "claimlens.extraction.showRawResponse": "Show Raw Response",
+  "claimlens.extraction.hideRawResponse": "Hide Raw Response",
   "claimlens.extraction.treeView": "Tree View",
   "claimlens.extraction.jsonView": "JSON",
 
@@ -85,6 +90,11 @@
   "claimlens.action.cancel": "Cancel",
   "claimlens.action.back": "Back",
   "claimlens.action.linkClaim": "Link to Claim",
+
+  "claimlens.confirm.process.title": "Process Document",
+  "claimlens.confirm.process.message": "Are you sure you want to process this document? This will send it through OCR extraction.",
+  "claimlens.confirm.validate.title": "Run Validation",
+  "claimlens.confirm.validate.message": "Are you sure you want to run validation on this document?",
 
   "claimlens.yes": "Yes",
   "claimlens.no": "No",
@@ -143,6 +153,7 @@
   "claimlens.findings.field": "Field",
   "claimlens.findings.description": "Description",
   "claimlens.findings.resolution": "Resolution",
+  "claimlens.findings.ruleName": "Rule",
   "claimlens.findings.noFindings": "No findings",
   "claimlens.findings.accept": "Accept",
   "claimlens.findings.reject": "Reject",
@@ -172,7 +183,14 @@
   "claimlens.proposals.approve": "Approve",
   "claimlens.proposals.reject": "Reject",
   "claimlens.proposals.apply": "Apply",
+  "claimlens.proposals.actions": "Actions",
   "claimlens.proposals.noProposals": "No registry update proposals",
+
+  "claimlens.proposals.targetModel.Insuree": "Insuree",
+  "claimlens.proposals.targetModel.HealthFacility": "Health Facility",
+  "claimlens.proposals.targetModel.Diagnosis": "Diagnosis",
+  "claimlens.proposals.targetModel.MedicalItem": "Medical Item",
+  "claimlens.proposals.targetModel.MedicalService": "Medical Service",
 
   "claimlens.proposals.status.proposed": "Proposed",
   "claimlens.proposals.status.approved": "Approved",
@@ -214,6 +232,13 @@
   "claimlens.ruleType.null": "Any",
 
   "claimlens.language.null": "Any",
+  "claimlens.language.en": "English",
+  "claimlens.language.fr": "French",
+  "claimlens.language.sw": "Swahili",
+  "claimlens.language.ar": "Arabic",
+  "claimlens.language.es": "Spanish",
+  "claimlens.language.pt": "Portuguese",
+  "claimlens.language.zh": "Chinese",
 
   "claimlens.modelRouting.pageTitle": "Model Routing Configuration",
 
@@ -351,5 +376,20 @@
   "claimlens.empty.noExtractionResult": "This document hasn't been processed yet.",
   "claimlens.empty.goToSettings": "Go to Settings",
   "claimlens.breadcrumb.documents": "Documents",
-  "claimlens.breadcrumb.documentDetail": "Document Detail"
+  "claimlens.breadcrumb.documentDetail": "Document Detail",
+
+  "claimlens.section.metadata": "Metadata",
+  "claimlens.section.extraction": "Extraction",
+  "claimlens.section.validation": "Validation",
+  "claimlens.section.findings": "Findings",
+  "claimlens.section.registry": "Registry",
+  "claimlens.section.auditLog": "Audit Log",
+
+  "claimlens.dashboard.title": "ClaimLens Dashboard",
+  "claimlens.dashboard.totalDocuments": "Total Documents",
+  "claimlens.dashboard.completed": "Completed",
+  "claimlens.dashboard.failed": "Failed",
+  "claimlens.dashboard.reviewRequired": "Review Required",
+  "claimlens.dashboard.recentDocuments": "Recent Documents",
+  "claimlens.dashboard.noDocuments": "No documents yet"
 }

@@ -1,8 +1,9 @@
 import React, { Component } from "react";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
-import { Grid, Paper, Typography } from "@material-ui/core";
-import { formatMessage, formatDateFromISO, withModulesManager } from "@openimis/fe-core";
+import { Grid, Paper, Typography, Button } from "@material-ui/core";
+import { GetApp } from "@material-ui/icons";
+import { formatMessage, formatDateFromISO, withModulesManager, withHistory, historyPush } from "@openimis/fe-core";
 import StatusBadge from "./StatusBadge";
 import ConfidenceBar from "./ConfidenceBar";
 
@@ -11,6 +12,12 @@ const styles = (theme) => ({
   title: { marginBottom: theme.spacing(2) },
   label: { fontWeight: "bold", color: theme.palette.text.secondary },
   value: { marginBottom: theme.spacing(1) },
+  claimLink: {
+    cursor: "pointer",
+    color: theme.palette.primary.main,
+    "&:hover": { textDecoration: "underline" },
+  },
+  downloadButton: { marginTop: theme.spacing(1) },
 });
 
 class DocumentMetadataPanel extends Component {
@@ -90,15 +97,61 @@ class DocumentMetadataPanel extends Component {
           </Grid>
           <Grid item xs={3}>
             <Typography className={classes.label}>
+              {formatMessage(intl, "claimlens", "document.dateUpdated")}
+            </Typography>
+            <Typography className={classes.value}>
+              {doc.dateUpdated ? formatDateFromISO(modulesManager, intl, doc.dateUpdated) : "-"}
+            </Typography>
+          </Grid>
+          <Grid item xs={3}>
+            <Typography className={classes.label}>
               {formatMessage(intl, "claimlens", "document.language")}
             </Typography>
             <Typography className={classes.value}>{doc.language || "-"}</Typography>
           </Grid>
+          {doc.engineConfig && (
+            <Grid item xs={6}>
+              <Typography className={classes.label}>
+                {formatMessage(intl, "claimlens", "document.engineConfig")}
+              </Typography>
+              <Typography className={classes.value}>
+                {doc.engineConfig.name} ({doc.engineConfig.adapter})
+              </Typography>
+            </Grid>
+          )}
           <Grid item xs={3}>
             <Typography className={classes.label}>
               {formatMessage(intl, "claimlens", "document.claimUuid")}
             </Typography>
-            <Typography className={classes.value}>{doc.claimUuid || "-"}</Typography>
+            {doc.claimUuid ? (
+              <Typography
+                className={`${classes.value} ${classes.claimLink}`}
+                onClick={() =>
+                  historyPush(
+                    modulesManager,
+                    this.props.history,
+                    "claim.route.claimEdit",
+                    [doc.claimUuid]
+                  )
+                }
+              >
+                {doc.claimUuid}
+              </Typography>
+            ) : (
+              <Typography className={classes.value}>-</Typography>
+            )}
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<GetApp />}
+              className={classes.downloadButton}
+              href={`/api/claimlens/download/${doc.uuid}/`}
+              target="_blank"
+            >
+              {formatMessage(intl, "claimlens", "document.download")}
+            </Button>
           </Grid>
           {doc.errorMessage && (
             <Grid item xs={12}>
@@ -116,4 +169,4 @@ class DocumentMetadataPanel extends Component {
   }
 }
 
-export default withModulesManager(injectIntl(withStyles(styles)(DocumentMetadataPanel)));
+export default withModulesManager(withHistory(injectIntl(withStyles(styles)(DocumentMetadataPanel))));

@@ -1,7 +1,8 @@
 import React from "react";
-import { FindInPage, Tune } from "@material-ui/icons";
+import { Dashboard, FindInPage, Tune } from "@material-ui/icons";
 import { FormattedMessage } from "@openimis/fe-core";
 import ClaimLensMainMenu from "./components/ClaimLensMainMenu";
+import DashboardPage from "./pages/DashboardPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentDetailPage from "./pages/DocumentDetailPage";
 import UploadPage from "./pages/UploadPage";
@@ -30,6 +31,7 @@ import {
   ROUTE_CLAIMLENS_UPLOAD,
   ROUTE_CLAIMLENS_VALIDATION_RULE,
   ROUTE_CLAIMLENS_SETTINGS,
+  ROUTE_CLAIMLENS_DASHBOARD,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -41,6 +43,7 @@ const DEFAULT_CONFIG = {
     { key: "claimlens.route.upload", ref: ROUTE_CLAIMLENS_UPLOAD },
     { key: "claimlens.route.validationRule", ref: ROUTE_CLAIMLENS_VALIDATION_RULE },
     { key: "claimlens.route.settings", ref: ROUTE_CLAIMLENS_SETTINGS },
+    { key: "claimlens.route.dashboard", ref: ROUTE_CLAIMLENS_DASHBOARD },
     { key: "claimlens.DocumentStatusPicker", ref: DocumentStatusPicker },
     { key: "claimlens.DocumentStatusPicker.projection", ref: null },
     { key: "claimlens.DocumentClassificationPicker", ref: DocumentClassificationPicker },
@@ -65,11 +68,19 @@ const DEFAULT_CONFIG = {
     { path: ROUTE_CLAIMLENS_VALIDATION_RULE + "/:rule_uuid", component: ValidationRuleDetailPage },
     { path: ROUTE_CLAIMLENS_VALIDATION_RULE, component: ValidationRuleDetailPage },
     { path: ROUTE_CLAIMLENS_SETTINGS, component: SettingsPage },
+    { path: ROUTE_CLAIMLENS_DASHBOARD, component: DashboardPage },
   ],
   "core.MainMenu": [
     { name: "ClaimLensMainMenu", component: ClaimLensMainMenu },
   ],
   "claimlens.MainMenu": [
+    {
+      text: <FormattedMessage module="claimlens" id="menu.dashboard" />,
+      icon: <Dashboard />,
+      route: "/" + ROUTE_CLAIMLENS_DASHBOARD,
+      id: "claimlens.menu.dashboard",
+      filter: (rights) => rights.includes(RIGHT_CLAIMLENS_DOCUMENTS),
+    },
     {
       text: <FormattedMessage module="claimlens" id="menu.documents" />,
       icon: <FindInPage />,

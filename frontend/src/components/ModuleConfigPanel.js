@@ -21,6 +21,18 @@ class ModuleConfigPanel extends Component {
     dirty: false,
   };
 
+  componentDidUpdate(prevState) {
+    if (this.state.dirty) {
+      window.onbeforeunload = () => true;
+    } else {
+      window.onbeforeunload = null;
+    }
+  }
+
+  componentWillUnmount() {
+    window.onbeforeunload = null;
+  }
+
   handleChange = (field) => (e) => {
     this.setState({ [field]: e.target.value, dirty: true });
   };
