@@ -20,6 +20,9 @@ export const RIGHT_CLAIMLENS_CAPABILITY_SCORES = 159015;
 export const RIGHT_CLAIMLENS_MANAGE_CAPABILITY_SCORES = 159016;
 export const RIGHT_CLAIMLENS_ROUTING_POLICY = 159017;
 export const RIGHT_CLAIMLENS_MANAGE_ROUTING_POLICY = 159018;
+export const RIGHT_CLAIMLENS_MODULE_CONFIG = 159019;
+export const RIGHT_CLAIMLENS_MANAGE_ENGINE_ROUTING_RULES = 159020;
+export const RIGHT_CLAIMLENS_ENGINE_ROUTING_RULES = 159021;
 
 // Document statuses
 export const STATUS_PENDING = "pending";
@@ -148,3 +151,6 @@ export const ROUTE_CLAIMLENS_UPLOAD = "claimlens/upload";
 export const ROUTE_CLAIMLENS_MODEL_ROUTING = "claimlens/model-routing";
 export const ROUTE_CLAIMLENS_VALIDATION_RULES = "claimlens/validation-rules";
 export const ROUTE_CLAIMLENS_VALIDATION_RULE = "claimlens/validation-rules/rule";
+export const ROUTE_CLAIMLENS_SETTINGS = "claimlens/settings";
+export const ROUTE_CLAIMLENS_DOCUMENT_TYPES = "claimlens/document-types";
+export const ROUTE_CLAIMLENS_ENGINE_CONFIGS = "claimlens/engine-configs";

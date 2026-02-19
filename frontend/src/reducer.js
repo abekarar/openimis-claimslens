@@ -35,6 +35,7 @@ const initialState = {
   fetchedEngineConfigs: false,
   errorEngineConfigs: null,
   engineConfigs: [],
+  engineConfigsPageInfo: { totalCount: 0 },
 
   fetchingAuditLogs: false,
   fetchedAuditLogs: false,
@@ -83,6 +84,13 @@ const initialState = {
   fetchedRegistryProposals: false,
   errorRegistryProposals: null,
   registryProposals: [],
+
+  // Engine routing rules
+  fetchingEngineRoutingRules: false,
+  fetchedEngineRoutingRules: false,
+  errorEngineRoutingRules: null,
+  engineRoutingRules: [],
+  engineRoutingRulesPageInfo: { totalCount: 0 },
 
   submittingMutation: false,
   mutation: {},
@@ -203,6 +211,7 @@ function reducer(state = initialState, action) {
         fetchingEngineConfigs: false,
         fetchedEngineConfigs: true,
         engineConfigs: parseData(action.payload.data.claimlensEngineConfigs),
+        engineConfigsPageInfo: pageInfo(action.payload.data.claimlensEngineConfigs),
         errorEngineConfigs: formatGraphQLError(action.payload),
       };
     case "CLAIMLENS_ENGINE_CONFIGS_ERR":
@@ -351,6 +360,21 @@ function reducer(state = initialState, action) {
     case "CLAIMLENS_REGISTRY_PROPOSALS_ERR":
       return { ...state, fetchingRegistryProposals: false, errorRegistryProposals: formatServerError(action.payload) };
 
+    // Engine routing rules
+    case "CLAIMLENS_ENGINE_ROUTING_RULES_REQ":
+      return { ...state, fetchingEngineRoutingRules: true, fetchedEngineRoutingRules: false, engineRoutingRules: [], errorEngineRoutingRules: null };
+    case "CLAIMLENS_ENGINE_ROUTING_RULES_RESP":
+      return {
+        ...state,
+        fetchingEngineRoutingRules: false,
+        fetchedEngineRoutingRules: true,
+        engineRoutingRules: parseData(action.payload.data.claimlensEngineRoutingRules),
+        engineRoutingRulesPageInfo: pageInfo(action.payload.data.claimlensEngineRoutingRules),
+        errorEngineRoutingRules: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_ENGINE_ROUTING_RULES_ERR":
+      return { ...state, fetchingEngineRoutingRules: false, errorEngineRoutingRules: formatServerError(action.payload) };
+
     // Mutations
     case "CLAIMLENS_MUTATION_REQ":
       return dispatchMutationReq(state, action);
@@ -384,6 +408,14 @@ function reducer(state = initialState, action) {
       return dispatchMutationResp(state, "applyClaimlensRegistryProposal", action);
     case "CLAIMLENS_RESOLVE_VALIDATION_FINDING_RESP":
       return dispatchMutationResp(state, "resolveClaimlensValidationFinding", action);
+    case "CLAIMLENS_LINK_DOCUMENT_TO_CLAIM_RESP":
+      return dispatchMutationResp(state, "linkClaimlensDocumentToClaim", action);
+    case "CLAIMLENS_UPDATE_MODULE_CONFIG_RESP":
+      return dispatchMutationResp(state, "updateClaimlensModuleConfig", action);
+    case "CLAIMLENS_CREATE_ENGINE_ROUTING_RULE_RESP":
+      return dispatchMutationResp(state, "createClaimlensEngineRoutingRule", action);
+    case "CLAIMLENS_UPDATE_ENGINE_ROUTING_RULE_RESP":
+      return dispatchMutationResp(state, "updateClaimlensEngineRoutingRule", action);
 
     default:
       return state;

@@ -203,6 +203,18 @@ export function fetchAuditLogs(mm, documentUuid) {
   return graphql(payload, "CLAIMLENS_AUDIT_LOGS");
 }
 
+const CLAIMLENS_ENGINE_ROUTING_RULE_FIELDS = [
+  "uuid",
+  "name",
+  "language",
+  "minConfidence",
+  "priority",
+  "isActive",
+  "dateCreated",
+  "engineConfig{uuid,name,adapter}",
+  "documentType{uuid,code,name}",
+];
+
 // --- Existing mutations ---
 
 export function processDocument(uuid, clientMutationLabel) {
@@ -593,6 +605,89 @@ export function resolveValidationFinding(id, resolutionStatus, clientMutationLab
   return graphql(
     mutation.payload,
     ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_RESOLVE_VALIDATION_FINDING_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+// --- Gap 5: Link document to claim ---
+
+export function linkDocumentToClaim(documentUuid, claimUuid, clientMutationLabel) {
+  if (documentUuid == null) throw new Error("linkDocumentToClaim: documentUuid is required");
+  if (claimUuid == null) throw new Error("linkDocumentToClaim: claimUuid is required");
+  const mutation = formatMutation(
+    "linkClaimlensDocumentToClaim",
+    `documentUuid: "${documentUuid}", claimUuid: "${claimUuid}"`,
+    clientMutationLabel
+  );
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_LINK_DOCUMENT_TO_CLAIM_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+// --- Gap 1: Module config ---
+
+export function updateModuleConfig(data, clientMutationLabel) {
+  const fields = [];
+  if (data.autoApproveThreshold !== undefined) fields.push(`autoApproveThreshold: ${data.autoApproveThreshold}`);
+  if (data.reviewThreshold !== undefined) fields.push(`reviewThreshold: ${data.reviewThreshold}`);
+
+  const mutation = formatMutation("updateClaimlensModuleConfig", fields.join(", "), clientMutationLabel);
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_UPDATE_MODULE_CONFIG_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+// --- Gap 2: Engine routing rules ---
+
+export function fetchEngineRoutingRules(mm, filters) {
+  const payload = formatPageQueryWithCount(
+    "claimlensEngineRoutingRules",
+    filters,
+    CLAIMLENS_ENGINE_ROUTING_RULE_FIELDS
+  );
+  return graphql(payload, "CLAIMLENS_ENGINE_ROUTING_RULES");
+}
+
+export function createEngineRoutingRule(data, clientMutationLabel) {
+  if (data.name == null) throw new Error("createEngineRoutingRule: name is required");
+  if (data.engineConfigId == null) throw new Error("createEngineRoutingRule: engineConfigId is required");
+  const fields = [
+    `name: "${data.name}"`,
+    `engineConfigId: "${data.engineConfigId}"`,
+  ];
+  if (data.language) fields.push(`language: "${data.language}"`);
+  if (data.documentTypeId) fields.push(`documentTypeId: "${data.documentTypeId}"`);
+  if (data.minConfidence !== undefined) fields.push(`minConfidence: ${data.minConfidence}`);
+  if (data.priority !== undefined) fields.push(`priority: ${data.priority}`);
+  if (data.isActive !== undefined) fields.push(`isActive: ${data.isActive}`);
+
+  const mutation = formatMutation("createClaimlensEngineRoutingRule", fields.join(", "), clientMutationLabel);
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_CREATE_ENGINE_ROUTING_RULE_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+export function updateEngineRoutingRule(data, clientMutationLabel) {
+  if (data.id == null) throw new Error("updateEngineRoutingRule: id is required");
+  const fields = [`id: "${data.id}"`];
+  if (data.name) fields.push(`name: "${data.name}"`);
+  if (data.engineConfigId) fields.push(`engineConfigId: "${data.engineConfigId}"`);
+  if (data.language) fields.push(`language: "${data.language}"`);
+  if (data.documentTypeId) fields.push(`documentTypeId: "${data.documentTypeId}"`);
+  if (data.minConfidence !== undefined) fields.push(`minConfidence: ${data.minConfidence}`);
+  if (data.priority !== undefined) fields.push(`priority: ${data.priority}`);
+  if (data.isActive !== undefined) fields.push(`isActive: ${data.isActive}`);
+
+  const mutation = formatMutation("updateClaimlensEngineRoutingRule", fields.join(", "), clientMutationLabel);
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_UPDATE_ENGINE_ROUTING_RULE_RESP", "CLAIMLENS_MUTATION_ERR"],
     { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
   );
 }

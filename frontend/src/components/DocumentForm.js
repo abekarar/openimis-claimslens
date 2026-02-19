@@ -25,6 +25,8 @@ import ProcessingTimeline from "./ProcessingTimeline";
 import ValidationResultPanel from "./ValidationResultPanel";
 import ValidationFindingsPanel from "./ValidationFindingsPanel";
 import RegistryUpdatePanel from "./RegistryUpdatePanel";
+import AuditLogPanel from "./AuditLogPanel";
+import LinkClaimDialog from "./LinkClaimDialog";
 import {
   STATUS_PENDING,
   STATUS_COMPLETED,
@@ -42,6 +44,7 @@ const styles = (theme) => ({
 class DocumentForm extends Component {
   state = {
     pollCount: 0,
+    linkClaimOpen: false,
   };
 
   componentDidMount() {
@@ -151,6 +154,13 @@ class DocumentForm extends Component {
     );
   };
 
+  handleLinkClaimClose = (saved) => {
+    this.setState({ linkClaimOpen: false });
+    if (saved) {
+      this.props.fetchDocument(this.props.modulesManager, this.props.document_uuid);
+    }
+  };
+
   gatherFindings(validationResults) {
     if (!validationResults || !validationResults.length) return [];
     const findings = [];
@@ -224,6 +234,19 @@ class DocumentForm extends Component {
           </div>
         )}
 
+        {doc.status === STATUS_COMPLETED && !doc.claimUuid && (
+          <div className={classes.actions}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => this.setState({ linkClaimOpen: true })}
+              disabled={submittingMutation}
+            >
+              {formatMessage(intl, "claimlens", "action.linkClaim")}
+            </Button>
+          </div>
+        )}
+
         <ProcessingTimeline status={doc.status} />
         <DocumentMetadataPanel document={doc} />
         {doc.extractionResult && (
@@ -245,6 +268,12 @@ class DocumentForm extends Component {
             onApplyProposal={this.handleApplyProposal}
           />
         )}
+        <AuditLogPanel auditLogs={this.props.auditLogs} />
+        <LinkClaimDialog
+          open={this.state.linkClaimOpen}
+          onClose={this.handleLinkClaimClose}
+          documentUuid={doc.uuid}
+        />
       </div>
     );
   }
