@@ -41,7 +41,7 @@ DEFAULT_CFG = {
     "celery_queue_validation": "claimlens.validation",
 
     # LLM
-    "default_engine_adapter": "mistral",
+    "default_engine_adapter": "openai_compatible",
     "llm_request_timeout_seconds": 120,
     "llm_max_retries": 2,
 

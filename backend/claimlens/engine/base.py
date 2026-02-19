@@ -1,14 +1,25 @@
 import base64
 import json
 import logging
+import os
 import time
 from abc import ABC, abstractmethod
+from functools import lru_cache
 
 import httpx
 
 from claimlens.engine.types import LLMResponse
 
 logger = logging.getLogger(__name__)
+
+PROMPTS_DIR = os.path.join(os.path.dirname(__file__), 'prompts')
+
+
+@lru_cache(maxsize=4)
+def _load_prompt(filename):
+    path = os.path.join(PROMPTS_DIR, filename)
+    with open(path, 'r') as f:
+        return f.read()
 
 ADAPTER_REGISTRY = {}
 
@@ -48,8 +59,20 @@ class BaseLLMEngine(ABC):
             return False
 
     def _encode_image(self, image_bytes, mime_type):
+        if mime_type == 'application/pdf':
+            image_bytes, mime_type = self._pdf_to_png(image_bytes)
         b64 = base64.b64encode(image_bytes).decode('utf-8')
         return f"data:{mime_type};base64,{b64}"
+
+    @staticmethod
+    def _pdf_to_png(pdf_bytes):
+        import fitz
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        page = doc[0]
+        pix = page.get_pixmap(dpi=200)
+        png_bytes = pix.tobytes("png")
+        doc.close()
+        return png_bytes, "image/png"
 
     def _build_classification_prompt(self, document_types):
         type_descriptions = []
@@ -58,17 +81,8 @@ class BaseLLMEngine(ABC):
             type_descriptions.append(f"- {dt['code']}: {dt['name']}{hints}")
 
         types_text = "\n".join(type_descriptions)
-        return (
-            "You are a document classification system. Analyze the provided document image "
-            "and classify it into one of the following document types:\n\n"
-            f"{types_text}\n\n"
-            "Respond with a JSON object containing:\n"
-            '- "document_type_code": the code of the matching document type\n'
-            '- "confidence": a float between 0 and 1 indicating classification confidence\n'
-            '- "language": ISO 639-1 language code of the document (e.g. "en", "fr", "sw")\n'
-            '- "reasoning": brief explanation of why this classification was chosen\n\n'
-            "Respond ONLY with valid JSON, no additional text."
-        )
+        template = _load_prompt('classification.md')
+        return template.format_map({'types_text': types_text})
 
     def _build_extraction_prompt(self, extraction_template):
         fields_text = json.dumps(extraction_template, indent=2)
@@ -88,19 +102,11 @@ class BaseLLMEngine(ABC):
                 "should reflect overall confidence for the array extraction.\n"
             )
 
-        return (
-            "You are a document data extraction system. Extract structured data from the "
-            "provided document image according to this template:\n\n"
-            f"{fields_text}\n\n"
-            "For each field, provide:\n"
-            "- The extracted value\n"
-            "- A confidence score between 0 and 1\n"
-            f"{array_instructions}\n"
-            "Respond with a JSON object containing:\n"
-            '- "fields": object mapping field names to {"value": ..., "confidence": float}\n'
-            '- "aggregate_confidence": overall extraction confidence (float 0-1)\n\n'
-            "Respond ONLY with valid JSON, no additional text."
-        )
+        template = _load_prompt('extraction.md')
+        return template.format_map({
+            'fields_text': fields_text,
+            'array_instructions': array_instructions,
+        })
 
     def _parse_json_response(self, text):
         text = text.strip()

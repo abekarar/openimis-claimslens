@@ -43,13 +43,15 @@ class EngineConfigModelTest(TestCase, ClaimlensTestDataMixin):
         ec = EngineConfig(**payload)
         ec.save(user=self.user)
         self.assertIsNotNone(ec.id)
-        self.assertEqual(ec.adapter, 'mistral')
+        self.assertEqual(ec.adapter, 'openai_compatible')
         self.assertTrue(ec.is_primary)
 
     def test_engine_config_choices(self):
-        self.assertIn('mistral', dict(EngineConfig.Adapter.choices))
-        self.assertIn('gemini', dict(EngineConfig.Adapter.choices))
-        self.assertIn('deepseek', dict(EngineConfig.Adapter.choices))
+        choices = dict(EngineConfig.Adapter.choices)
+        self.assertIn('openai_compatible', choices)
+        self.assertIn('gemini', choices)
+        self.assertIn('mistral', choices)
+        self.assertIn('deepseek', choices)
 
 
 class DocumentModelTest(TestCase, ClaimlensTestDataMixin):

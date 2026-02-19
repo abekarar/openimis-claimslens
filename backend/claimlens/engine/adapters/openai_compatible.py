@@ -6,8 +6,10 @@ from claimlens.engine.types import LLMResponse
 logger = logging.getLogger(__name__)
 
 
+@register_adapter('openai_compatible')
 @register_adapter('mistral')
-class MistralEngine(BaseLLMEngine):
+@register_adapter('deepseek')
+class OpenAICompatibleEngine(BaseLLMEngine):
 
     def classify(self, image_bytes, mime_type, document_types):
         try:
@@ -50,7 +52,7 @@ class MistralEngine(BaseLLMEngine):
                 engine_name=self.name,
             )
         except Exception as e:
-            logger.error("Mistral classification failed: %s", e)
+            logger.error("OpenAI-compatible classification failed: %s", e)
             return LLMResponse(success=False, error=str(e), engine_name=self.name)
 
     def extract(self, image_bytes, mime_type, extraction_template):
@@ -94,5 +96,5 @@ class MistralEngine(BaseLLMEngine):
                 engine_name=self.name,
             )
         except Exception as e:
-            logger.error("Mistral extraction failed: %s", e)
+            logger.error("OpenAI-compatible extraction failed: %s", e)
             return LLMResponse(success=False, error=str(e), engine_name=self.name)

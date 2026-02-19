@@ -4,9 +4,8 @@ from claimlens.engine.base import ADAPTER_REGISTRY
 from claimlens.engine.types import LLMResponse
 
 # Import adapters to trigger registration
-import claimlens.engine.adapters.mistral  # noqa: F401
-import claimlens.engine.adapters.gemini   # noqa: F401
-import claimlens.engine.adapters.deepseek  # noqa: F401
+import claimlens.engine.adapters.openai_compatible  # noqa: F401
+import claimlens.engine.adapters.gemini              # noqa: F401
 
 logger = logging.getLogger(__name__)
 

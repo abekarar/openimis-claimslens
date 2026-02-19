@@ -4,33 +4,35 @@ from django.test import TestCase
 from claimlens.engine.base import ADAPTER_REGISTRY
 from claimlens.engine.types import LLMResponse
 from claimlens.engine.manager import EngineManager
-from claimlens.engine.adapters.mistral import MistralEngine
+from claimlens.engine.adapters.openai_compatible import OpenAICompatibleEngine
 from claimlens.engine.adapters.gemini import GeminiEngine
-from claimlens.engine.adapters.deepseek import DeepSeekEngine
 from claimlens.tests.data import ClaimlensTestDataMixin
 
 
 class AdapterRegistryTest(TestCase):
 
     def test_all_adapters_registered(self):
-        self.assertIn('mistral', ADAPTER_REGISTRY)
+        self.assertIn('openai_compatible', ADAPTER_REGISTRY)
         self.assertIn('gemini', ADAPTER_REGISTRY)
+        self.assertIn('mistral', ADAPTER_REGISTRY)
         self.assertIn('deepseek', ADAPTER_REGISTRY)
 
     def test_adapter_classes(self):
-        self.assertEqual(ADAPTER_REGISTRY['mistral'], MistralEngine)
+        self.assertEqual(ADAPTER_REGISTRY['openai_compatible'], OpenAICompatibleEngine)
         self.assertEqual(ADAPTER_REGISTRY['gemini'], GeminiEngine)
-        self.assertEqual(ADAPTER_REGISTRY['deepseek'], DeepSeekEngine)
+        # Legacy aliases point to the same class
+        self.assertIs(ADAPTER_REGISTRY['mistral'], OpenAICompatibleEngine)
+        self.assertIs(ADAPTER_REGISTRY['deepseek'], OpenAICompatibleEngine)
 
 
-class MistralEngineTest(TestCase, ClaimlensTestDataMixin):
+class OpenAICompatibleEngineTest(TestCase, ClaimlensTestDataMixin):
 
     def setUp(self):
-        self.engine = MistralEngine({
-            'name': 'test-mistral',
-            'endpoint_url': 'https://api.mistral.ai',
+        self.engine = OpenAICompatibleEngine({
+            'name': 'test-openai-compat',
+            'endpoint_url': 'https://openrouter.ai/api',
             'api_key': 'test-key',
-            'model_name': 'pixtral-large-latest',
+            'model_name': 'mistralai/pixtral-large-latest',
         })
 
     @patch('claimlens.engine.base.httpx.Client')

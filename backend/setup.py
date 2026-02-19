@@ -29,6 +29,7 @@ setup(
         'Pillow',
         'celery',
         'cryptography',
+        'PyMuPDF',
     ],
     classifiers=[
         'Environment :: Web Environment',

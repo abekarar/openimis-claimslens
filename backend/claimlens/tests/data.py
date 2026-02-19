@@ -38,11 +38,11 @@ class ClaimlensTestDataMixin:
     }
 
     engine_config_payload = {
-        'name': 'Test Mistral Engine',
-        'adapter': 'mistral',
-        'endpoint_url': 'https://api.mistral.ai',
+        'name': 'Test OpenAI Compatible Engine',
+        'adapter': 'openai_compatible',
+        'endpoint_url': 'https://openrouter.ai/api',
         'api_key': 'test-api-key-12345',
-        'model_name': 'pixtral-large-latest',
+        'model_name': 'mistralai/pixtral-large-latest',
         'deployment_mode': EngineConfig.DeploymentMode.CLOUD,
         'is_primary': True,
         'is_fallback': False,

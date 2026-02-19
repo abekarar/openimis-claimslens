@@ -19,9 +19,10 @@ class DocumentType(HistoryModel):
 
 class EngineConfig(HistoryModel):
     class Adapter(models.TextChoices):
-        MISTRAL = 'mistral', _('Mistral')
+        OPENAI_COMPATIBLE = 'openai_compatible', _('OpenAI Compatible')
         GEMINI = 'gemini', _('Gemini')
-        DEEPSEEK = 'deepseek', _('DeepSeek')
+        MISTRAL = 'mistral', _('Mistral (legacy)')
+        DEEPSEEK = 'deepseek', _('DeepSeek (legacy)')
 
     class DeploymentMode(models.TextChoices):
         CLOUD = 'cloud', _('Cloud')
