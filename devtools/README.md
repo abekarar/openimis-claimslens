@@ -6,7 +6,9 @@ Includes:
 - `OPENROUTER_API_KEY` passed to backend and celery worker
 - Celery worker with ClaimLens queues (preprocessing, classification, extraction)
 - MinIO object storage and Redis broker
-- Backend volume mount for the claimlens module symlink
+- Backend and frontend volume mounts for the claimlens module
+- Fixed `entrypoint-dev.sh` with correct dependency install order and symlink setup
+- Fixed `craco.config.js` with webpack resolve.modules for symlinked packages
 
 ## Setup
 
@@ -23,6 +25,8 @@ ln -s ~/projects/openimis-claimslens/frontend ~/projects/openimis-dev-tools/fron
 
 ```bash
 cp compose.yml compose-version.yml .env.example ~/projects/openimis-dev-tools/
+cp craco.config.js ~/projects/openimis-dev-tools/frontend/
+cp entrypoint-dev.sh ~/projects/openimis-dev-tools/frontend/script/
 ```
 
 3. Create your `.env` from the example:

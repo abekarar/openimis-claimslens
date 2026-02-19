@@ -11,6 +11,11 @@ services:
     extends:
       service: frontend-dev
       file: compose-version.yml
+    volumes:
+      - ./frontend-packages:/frontend-packages
+      - ./frontend:/app
+      - ./nodes_volume:/app/node_modules:rw
+      - /home/abekarar/projects/openimis-claimslens/frontend:/frontend-packages/openimis-fe-claimlens_js
   db:
     platform: linux/amd64
     image: ghcr.io/openimis/openimis-pgsql:${DB_TAG:-develop}
