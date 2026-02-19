@@ -292,16 +292,30 @@ class ModuleConfigService:
     def update_thresholds(self, data):
         try:
             from core.models import ModuleConfiguration
+            from claimlens.apps import DEFAULT_CFG
 
-            cfg = ModuleConfiguration.objects.get(module='claimlens')
-            config = cfg.config or {}
+            import json as _json
+
+            cfg, _created = ModuleConfiguration.objects.get_or_create(
+                module='claimlens', layer='be',
+                defaults={'config': _json.dumps(DEFAULT_CFG)},
+            )
+            config = cfg.config
+            if isinstance(config, str):
+                # ModuleConfiguration stores Python dict repr (single quotes)
+                # Convert to valid JSON before parsing
+                try:
+                    config = _json.loads(config)
+                except (_json.JSONDecodeError, ValueError):
+                    config = _json.loads(config.replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null'))
+            config = config or {}
 
             if 'auto_approve_threshold' in data:
                 config['auto_approve_threshold'] = data['auto_approve_threshold']
             if 'review_threshold' in data:
                 config['review_threshold'] = data['review_threshold']
 
-            cfg.config = config
+            cfg.config = _json.dumps(config)
             cfg.save()
 
             # Reload into ClaimlensConfig
