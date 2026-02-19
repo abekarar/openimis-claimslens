@@ -15,6 +15,7 @@ from claimlens.models import (
     Document, DocumentType, EngineConfig, AuditLog, ExtractionResult,
     EngineCapabilityScore, RoutingPolicy, ValidationRule, ValidationResult,
     ValidationFinding, RegistryUpdateProposal, EngineRoutingRule,
+    PromptTemplate,
 )
 from claimlens.validations import (
     DocumentValidation, DocumentTypeValidation, EngineConfigValidation,
@@ -428,3 +429,87 @@ class EngineRoutingRuleService(BaseService):
     @register_service_signal('claimlens.routing_rule.update')
     def update(self, obj_data):
         return super().update(obj_data)
+
+
+class PromptTemplateService:
+    """Manages versioned prompt templates with global/per-DocType scope."""
+
+    def __init__(self, user):
+        self.user = user
+
+    def save_version(self, prompt_type, content, change_summary, document_type_id=None):
+        try:
+            with transaction.atomic():
+                from claimlens.validations import PromptTemplateValidation
+                PromptTemplateValidation.validate_save(
+                    self.user, prompt_type=prompt_type, content=content,
+                )
+
+                # Get next version for this (prompt_type, document_type) combo
+                current_max = PromptTemplate.objects.filter(
+                    prompt_type=prompt_type,
+                    document_type_id=document_type_id,
+                    is_deleted=False,
+                ).order_by('-version').values_list('version', flat=True).first() or 0
+                next_version = current_max + 1
+
+                # Deactivate current active version
+                PromptTemplate.objects.filter(
+                    prompt_type=prompt_type,
+                    document_type_id=document_type_id,
+                    is_active=True,
+                    is_deleted=False,
+                ).update(is_active=False)
+
+                # Create new version as active
+                template = PromptTemplate(
+                    prompt_type=prompt_type,
+                    content=content,
+                    version=next_version,
+                    document_type_id=document_type_id,
+                    is_active=True,
+                    change_summary=change_summary,
+                )
+                template.save(user=self.user)
+
+                return output_result_success(dict_representation=model_representation(template))
+        except Exception as exc:
+            return output_exception(model_name='PromptTemplate', method='save_version', exception=exc)
+
+    def activate_version(self, template_id):
+        try:
+            with transaction.atomic():
+                template = PromptTemplate.objects.get(id=template_id, is_deleted=False)
+
+                # Deactivate current active for same (prompt_type, document_type)
+                PromptTemplate.objects.filter(
+                    prompt_type=template.prompt_type,
+                    document_type=template.document_type,
+                    is_active=True,
+                    is_deleted=False,
+                ).update(is_active=False)
+
+                template.is_active = True
+                template.save(user=self.user)
+
+                return output_result_success(dict_representation=model_representation(template))
+        except Exception as exc:
+            return output_exception(model_name='PromptTemplate', method='activate_version', exception=exc)
+
+    def delete_override(self, prompt_type, document_type_id):
+        try:
+            with transaction.atomic():
+                if not document_type_id:
+                    raise ValidationError("Cannot delete global prompt templates")
+
+                templates = PromptTemplate.objects.filter(
+                    prompt_type=prompt_type,
+                    document_type_id=document_type_id,
+                    is_deleted=False,
+                )
+                count = templates.count()
+                templates.update(is_deleted=True, is_active=False)
+
+                return output_result_success(dict_representation={'deleted_count': count})
+        except Exception as exc:
+            return output_exception(model_name='PromptTemplate', method='delete_override', exception=exc)

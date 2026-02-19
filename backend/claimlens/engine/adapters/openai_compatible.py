@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 @register_adapter('deepseek')
 class OpenAICompatibleEngine(BaseLLMEngine):
 
-    def classify(self, image_bytes, mime_type, document_types):
+    def classify(self, image_bytes, mime_type, document_types, document_type_code=None):
         try:
-            prompt = self._build_classification_prompt(document_types)
+            prompt = self._build_classification_prompt(document_types, document_type_code=document_type_code)
             data_url = self._encode_image(image_bytes, mime_type)
 
             payload = {
@@ -55,9 +55,9 @@ class OpenAICompatibleEngine(BaseLLMEngine):
             logger.error("OpenAI-compatible classification failed: %s", e)
             return LLMResponse(success=False, error=str(e), engine_name=self.name)
 
-    def extract(self, image_bytes, mime_type, extraction_template):
+    def extract(self, image_bytes, mime_type, extraction_template, document_type_code=None):
         try:
-            prompt = self._build_extraction_prompt(extraction_template)
+            prompt = self._build_extraction_prompt(extraction_template, document_type_code=document_type_code)
             data_url = self._encode_image(image_bytes, mime_type)
 
             payload = {

@@ -329,3 +329,28 @@ class RegistryUpdateProposal(HistoryModel):
 
     def __str__(self):
         return f"Proposal: {self.target_model}.{self.field_name} → {self.proposed_value[:30]}"
+
+
+class PromptTemplate(HistoryModel):
+    class PromptType(models.TextChoices):
+        CLASSIFICATION = 'classification', _('Classification')
+        EXTRACTION = 'extraction', _('Extraction')
+
+    prompt_type = models.CharField(max_length=20, choices=PromptType.choices)
+    content = models.TextField()
+    version = models.PositiveIntegerField(default=1)
+    document_type = models.ForeignKey(
+        DocumentType, on_delete=models.DO_NOTHING, null=True, blank=True,
+        related_name='prompt_overrides'
+    )
+    is_active = models.BooleanField(default=False)
+    change_summary = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        unique_together = ('prompt_type', 'document_type', 'version')
+        ordering = ['-version']
+
+    def __str__(self):
+        dt = self.document_type.code if self.document_type else 'global'
+        active = ' (active)' if self.is_active else ''
+        return f"{self.prompt_type} v{self.version} [{dt}]{active}"

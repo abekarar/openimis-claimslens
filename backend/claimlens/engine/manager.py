@@ -56,26 +56,26 @@ class EngineManager:
     def extract(self, image_bytes, mime_type, extraction_template):
         return self._execute_with_fallback('extract', image_bytes, mime_type, extraction_template)
 
-    def classify_routed(self, image_bytes, mime_type, document_types, language=None):
+    def classify_routed(self, image_bytes, mime_type, document_types, language=None, document_type_code=None):
         """Try scored engine selection for classification, fall back to primary/fallback."""
         selected = self.select_engine(language, document_type=None)
         if selected:
             config, engine = selected
             try:
-                result = engine.classify(image_bytes, mime_type, document_types)
+                result = engine.classify(image_bytes, mime_type, document_types, document_type_code=document_type_code)
                 if result.success:
                     return result, config
             except Exception as e:
                 logger.warning("Routed engine %s failed classify: %s, falling back", config.name, e)
         return self._execute_with_fallback('classify', image_bytes, mime_type, document_types), None
 
-    def extract_routed(self, image_bytes, mime_type, extraction_template, language=None, document_type=None):
+    def extract_routed(self, image_bytes, mime_type, extraction_template, language=None, document_type=None, document_type_code=None):
         """Try scored engine selection for extraction, fall back to primary/fallback."""
         selected = self.select_engine(language, document_type)
         if selected:
             config, engine = selected
             try:
-                result = engine.extract(image_bytes, mime_type, extraction_template)
+                result = engine.extract(image_bytes, mime_type, extraction_template, document_type_code=document_type_code)
                 if result.success:
                     return result, config
             except Exception as e:

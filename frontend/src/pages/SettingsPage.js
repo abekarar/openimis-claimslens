@@ -5,7 +5,8 @@ import { withTheme, withStyles } from "@material-ui/core/styles";
 import { Typography } from "@material-ui/core";
 import { withModulesManager, withHistory, formatMessage } from "@openimis/fe-core";
 import ModuleConfigPanel from "../components/ModuleConfigPanel";
-import { RIGHT_CLAIMLENS_MODULE_CONFIG } from "../constants";
+import PromptTemplatesPanel from "../components/PromptTemplatesPanel";
+import { RIGHT_CLAIMLENS_MODULE_CONFIG, RIGHT_CLAIMLENS_PROMPT_TEMPLATES } from "../constants";
 
 const styles = (theme) => ({
   page: theme.page,
@@ -22,6 +23,7 @@ class SettingsPage extends Component {
           {formatMessage(intl, "claimlens", "settings.pageTitle")}
         </Typography>
         <ModuleConfigPanel />
+        {rights.includes(RIGHT_CLAIMLENS_PROMPT_TEMPLATES) && <PromptTemplatesPanel />}
       </div>
     );
   }

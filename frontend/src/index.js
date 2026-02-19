@@ -171,6 +171,11 @@ export {
   fetchEngineRoutingRules,
   createEngineRoutingRule,
   updateEngineRoutingRule,
+  fetchPromptTemplates,
+  fetchPromptVersionHistory,
+  savePromptVersion,
+  activatePromptVersion,
+  deletePromptOverride,
 } from "./actions";
 
 export const ClaimLensModule = (cfg) => {
