@@ -1,0 +1,27 @@
+{
+    "code": "PRESCRIPTION",
+    "name": "Medical Prescription",
+    "classificationHints": "prescription, Rx, medication order, drug prescription, pharmacy order",
+    "extractionTemplate": {
+        "patient_name": {"type": "string", "required": true},
+        "medication_name": {"type": "string", "required": true},
+        "dosage": {"type": "string", "required": true},
+        "frequency": {"type": "string", "required": true},
+        "prescriber_name": {"type": "string", "required": true},
+        "date": {"type": "date", "required": true},
+        "duration": {"type": "string", "required": false},
+        "refills": {"type": "number", "required": false},
+        "instructions": {"type": "string", "required": false}
+    },
+    "fieldDefinitions": {
+        "patient_name": "Full name of the patient",
+        "medication_name": "Name of the prescribed medication",
+        "dosage": "Dosage amount and unit (e.g., 500mg)",
+        "frequency": "How often to take (e.g., twice daily)",
+        "prescriber_name": "Name of the prescribing physician",
+        "date": "Date the prescription was written",
+        "duration": "Duration of treatment (e.g., 7 days)",
+        "refills": "Number of authorized refills",
+        "instructions": "Special instructions for the patient"
+    }
+}

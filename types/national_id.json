@@ -1,0 +1,27 @@
+{
+    "code": "NATIONAL_ID",
+    "name": "National ID Card",
+    "classificationHints": "identity card, national ID, government ID, carte d'identite, citizen ID",
+    "extractionTemplate": {
+        "full_name": {"type": "string", "required": true},
+        "id_number": {"type": "string", "required": true},
+        "date_of_birth": {"type": "date", "required": true},
+        "gender": {"type": "string", "required": true},
+        "nationality": {"type": "string", "required": true},
+        "expiry_date": {"type": "date", "required": false},
+        "issue_date": {"type": "date", "required": false},
+        "place_of_birth": {"type": "string", "required": false},
+        "address": {"type": "string", "required": false}
+    },
+    "fieldDefinitions": {
+        "full_name": "Full legal name as shown on the ID",
+        "id_number": "National identification number",
+        "date_of_birth": "Date of birth of the ID holder",
+        "gender": "Gender as shown on the ID (M/F/Other)",
+        "nationality": "Nationality of the ID holder",
+        "expiry_date": "Expiration date of the ID card",
+        "issue_date": "Date the ID card was issued",
+        "place_of_birth": "Place of birth as shown on the ID",
+        "address": "Registered address on the ID"
+    }
+}

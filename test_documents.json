@@ -1,0 +1,25 @@
+{
+    "document_types": [
+        {"file": "types/prescription.json"},
+        {"file": "types/lab_result.json"},
+        {"file": "types/national_id.json"},
+        {"file": "types/referral.json"}
+    ],
+    "documents": [
+        {
+            "file": "test-data/sample-medical-invoice.pdf",
+            "type": "MEDICAL_INVOICE",
+            "language": "en"
+        },
+        {
+            "file": "test-data/sample-medical-invoice-2.pdf",
+            "type": "MEDICAL_INVOICE",
+            "language": "en"
+        },
+        {
+            "file": "test-data/sample-medical-invoice-3.pdf",
+            "type": "MEDICAL_INVOICE",
+            "language": "fr"
+        }
+    ]
+}

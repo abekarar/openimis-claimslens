@@ -1,0 +1,27 @@
+{
+    "code": "LAB_RESULT",
+    "name": "Laboratory Result",
+    "classificationHints": "lab report, test results, blood work, laboratory, pathology report, urinalysis, CBC",
+    "extractionTemplate": {
+        "patient_name": {"type": "string", "required": true},
+        "test_name": {"type": "string", "required": true},
+        "result_value": {"type": "string", "required": true},
+        "reference_range": {"type": "string", "required": true},
+        "lab_name": {"type": "string", "required": true},
+        "date": {"type": "date", "required": true},
+        "ordering_physician": {"type": "string", "required": false},
+        "specimen_type": {"type": "string", "required": false},
+        "abnormal_flag": {"type": "string", "required": false}
+    },
+    "fieldDefinitions": {
+        "patient_name": "Full name of the patient",
+        "test_name": "Name of the laboratory test performed",
+        "result_value": "The test result value with units",
+        "reference_range": "Normal reference range for the test",
+        "lab_name": "Name of the laboratory facility",
+        "date": "Date the test was performed or reported",
+        "ordering_physician": "Physician who ordered the test",
+        "specimen_type": "Type of specimen (e.g., blood, urine)",
+        "abnormal_flag": "Whether the result is abnormal (high/low/normal)"
+    }
+}

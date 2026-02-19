@@ -460,3 +460,111 @@ mutation {
    } }
    ```
 7. **Resolve** any findings and **apply** registry proposals as needed
+
+---
+
+## 5. Demo & Testing
+
+ClaimLens ships with `demo_flow.py`, an executable demo script that exercises all features end-to-end against a running local stack.
+
+### Prerequisites
+
+- Running Docker stack: backend, db, minio, redis-claimlens, celery-claimlens
+- Valid `OPENROUTER_API_KEY` configured in the engine config
+- Test PDFs in `test-data/`
+- Python 3 with the `requests` package installed
+
+### Core Demo (All 6 Enhancements)
+
+```bash
+python demo_flow.py
+```
+
+Runs the full verification flow:
+
+| Step | What It Tests |
+|------|---------------|
+| 0 | JWT authentication via `tokenAuth` |
+| 1 | Document type management — lists existing types, creates presets (PRESCRIPTION, LAB_RESULT, NATIONAL_ID, REFERRAL) |
+| 2 | Seeded validation rules — verifies 4 rules (ELIG_001, CLIN_001, FRAUD_001, REG_001) |
+| 3 | Threshold configuration — resets to defaults then sets custom values |
+| 4 | Routing policy — sets composite scoring weights |
+| 5 | Engine routing rule — creates a language-based routing rule |
+| 6 | English document processing — upload, extract, verify capability scores |
+| 7 | French document processing — upload, verify rule-based routing |
+| 8 | Document-to-claim linking — tests validation error for non-existent claims |
+| 9 | OPERATIONS.md presence and section verification |
+| 10 | Pass/fail summary for all 6 enhancements |
+
+Prints a colored pass/fail summary at the end.
+
+### Ad-hoc Document Processing
+
+Test a single document from your team:
+
+```bash
+# Auto-classify
+python demo_flow.py --file /path/to/invoice.pdf
+
+# Specify type and language
+python demo_flow.py --file /path/to/prescription.jpg --type PRESCRIPTION --language fr
+```
+
+If the specified `--type` doesn't exist, the script offers an interactive wizard to create it.
+
+### Batch Processing
+
+Process multiple documents from a JSON config:
+
+```bash
+python demo_flow.py --batch test_documents.json
+```
+
+Example config (`test_documents.json`):
+
+```json
+{
+    "document_types": [
+        {"file": "types/prescription.json"},
+        {"file": "types/lab_result.json"}
+    ],
+    "documents": [
+        {"file": "test-data/sample-medical-invoice.pdf", "type": "MEDICAL_INVOICE", "language": "en"},
+        {"file": "/home/team/prescription-fr.jpg", "type": "PRESCRIPTION", "language": "fr"},
+        {"file": "/home/team/lab-result.pdf"}
+    ]
+}
+```
+
+Documents without a `type` field use auto-classification. The `document_types` section creates types before processing.
+
+### Document Type Management
+
+```bash
+# List all types with their extraction templates
+python demo_flow.py --list-types
+
+# Create from a JSON definition file
+python demo_flow.py --create-type types/prescription.json
+
+# Interactive wizard
+python demo_flow.py --create-type --interactive
+```
+
+Preset type definitions are provided in `types/`:
+
+| File | Code | Key Fields |
+|------|------|------------|
+| `types/prescription.json` | PRESCRIPTION | patient_name, medication_name, dosage, frequency, prescriber_name, date |
+| `types/lab_result.json` | LAB_RESULT | patient_name, test_name, result_value, reference_range, lab_name, date |
+| `types/national_id.json` | NATIONAL_ID | full_name, id_number, date_of_birth, gender, nationality, expiry_date |
+| `types/referral.json` | REFERRAL | patient_name, referring_provider, receiving_provider, reason, date |
+
+### Common Flags
+
+| Flag | Description |
+|------|-------------|
+| `--base-url URL` | Target a different host (default: `http://localhost:8000`) |
+| `--verbose` | Print full GraphQL responses |
+| `--no-cleanup` | Keep demo data for manual inspection |
+| `--skip-setup` | Skip document type creation in core demo |

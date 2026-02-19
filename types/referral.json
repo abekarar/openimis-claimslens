@@ -1,0 +1,25 @@
+{
+    "code": "REFERRAL",
+    "name": "Referral Letter",
+    "classificationHints": "referral, transfer letter, referral letter, medical referral, specialist referral",
+    "extractionTemplate": {
+        "patient_name": {"type": "string", "required": true},
+        "referring_provider": {"type": "string", "required": true},
+        "receiving_provider": {"type": "string", "required": true},
+        "reason": {"type": "string", "required": true},
+        "date": {"type": "date", "required": true},
+        "urgency": {"type": "string", "required": false},
+        "diagnosis": {"type": "string", "required": false},
+        "clinical_notes": {"type": "string", "required": false}
+    },
+    "fieldDefinitions": {
+        "patient_name": "Full name of the patient being referred",
+        "referring_provider": "Name of the referring healthcare provider",
+        "receiving_provider": "Name of the specialist or facility receiving the referral",
+        "reason": "Reason for the referral",
+        "date": "Date the referral was written",
+        "urgency": "Urgency level (routine, urgent, emergency)",
+        "diagnosis": "Current or suspected diagnosis",
+        "clinical_notes": "Additional clinical notes or history"
+    }
+}
