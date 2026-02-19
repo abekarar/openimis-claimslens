@@ -215,15 +215,21 @@ class EngineCapabilityScoreService(BaseService):
         """Update capability scores using exponential moving average after extraction."""
         ALPHA = 0.2  # EMA smoothing factor — recent results have 20% weight
 
-        score, created = EngineCapabilityScore.objects.get_or_create(
-            engine_config=engine_config,
-            language=language,
-            document_type=document_type,
-            defaults={
-                'accuracy_score': 50, 'speed_score': 50, 'is_active': True,
-                'user_created': user, 'user_updated': user,
-            }
-        )
+        try:
+            score = EngineCapabilityScore.objects.get(
+                engine_config=engine_config,
+                language=language,
+                document_type=document_type,
+            )
+            created = False
+        except EngineCapabilityScore.DoesNotExist:
+            score = EngineCapabilityScore(
+                engine_config=engine_config,
+                language=language,
+                document_type=document_type,
+                accuracy_score=50, speed_score=50, is_active=True,
+            )
+            created = True
 
         # Map confidence (0-1) to score (0-100)
         new_accuracy = int(confidence * 100)
