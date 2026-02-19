@@ -1,40 +1,48 @@
-import django.db.models.deletion
-from django.conf import settings
-from django.db import migrations, models
-import uuid
+from django.db import migrations
+
+
+def create_engine_routing_rule_table(apps, schema_editor):
+    """Create EngineRoutingRule table using raw SQL (same pattern as 0003).
+
+    Django's CreateModel generates FK constraints referencing 'id' but the
+    actual PK column is 'UUID' (set by HistoryModel), so we use raw SQL.
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS claimlens_engineroutingrule (
+                "UUID" uuid NOT NULL PRIMARY KEY,
+                "isDeleted" boolean NOT NULL DEFAULT FALSE,
+                "Json_ext" jsonb DEFAULT '{}'::jsonb,
+                "DateCreated" timestamp with time zone,
+                "DateUpdated" timestamp with time zone,
+                version integer NOT NULL DEFAULT 1,
+                name varchar(255) NOT NULL,
+                language varchar(10),
+                min_confidence double precision NOT NULL DEFAULT 0.0,
+                priority integer NOT NULL DEFAULT 50,
+                is_active boolean NOT NULL DEFAULT TRUE,
+                document_type_id uuid REFERENCES claimlens_documenttype("UUID") ON DELETE NO ACTION,
+                engine_config_id uuid NOT NULL REFERENCES claimlens_engineconfig("UUID") ON DELETE NO ACTION,
+                "UserCreatedUUID" uuid NOT NULL REFERENCES "core_User"(id) ON DELETE NO ACTION,
+                "UserUpdatedUUID" uuid NOT NULL REFERENCES "core_User"(id) ON DELETE NO ACTION
+            )
+        ''')
+
+
+def drop_engine_routing_rule_table(apps, schema_editor):
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute('DROP TABLE IF EXISTS claimlens_engineroutingrule')
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('claimlens', '0005_seed_validation_rules'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='EngineRoutingRule',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('is_deleted', models.BooleanField(db_column='isDeleted', default=False)),
-                ('json_ext', models.JSONField(blank=True, db_column='JsonExt', default=dict)),
-                ('date_created', models.DateTimeField(auto_now_add=True, db_column='DateCreated', null=True)),
-                ('date_updated', models.DateTimeField(auto_now=True, db_column='DateUpdated', null=True)),
-                ('version', models.IntegerField(default=1)),
-                ('validity_from', models.DateTimeField(blank=True, db_column='ValidityFrom', null=True)),
-                ('validity_to', models.DateTimeField(blank=True, db_column='ValidityTo', null=True)),
-                ('name', models.CharField(max_length=255)),
-                ('language', models.CharField(blank=True, help_text='Match language (null=any)', max_length=10, null=True)),
-                ('min_confidence', models.FloatField(default=0.0, help_text='Only use this engine if its historical accuracy >= this value')),
-                ('priority', models.IntegerField(default=50, help_text='Higher priority rules win. 100=override composite scoring.')),
-                ('is_active', models.BooleanField(default=True)),
-                ('document_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='routing_rules', to='claimlens.documenttype')),
-                ('engine_config', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='routing_rules', to='claimlens.engineconfig')),
-                ('user_created', models.ForeignKey(db_column='UserCreatedUUID', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('user_updated', models.ForeignKey(db_column='UserUpdatedUUID', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
+        migrations.RunPython(create_engine_routing_rule_table, drop_engine_routing_rule_table),
     ]

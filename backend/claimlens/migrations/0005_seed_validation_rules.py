@@ -45,7 +45,7 @@ def seed_validation_rules(apps, schema_editor):
         for rule in rules:
             cursor.execute(
                 '''INSERT INTO claimlens_validationrule
-                   ("UUID", "isDeleted", "JsonExt", "DateCreated", "DateUpdated",
+                   ("UUID", "isDeleted", "Json_ext", "DateCreated", "DateUpdated",
                     version, code, name, rule_type, rule_definition, severity, is_active,
                     "UserCreatedUUID", "UserUpdatedUUID")
                    VALUES (%s, FALSE, '{}', NOW(), NOW(),
