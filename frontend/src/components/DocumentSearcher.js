@@ -3,8 +3,8 @@ import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 import { withStyles, withTheme } from "@material-ui/core/styles";
-import { IconButton, Tooltip } from "@material-ui/core";
-import { Visibility } from "@material-ui/icons";
+import { Box, Button, IconButton, Tooltip, Typography } from "@material-ui/core";
+import { Add, Visibility } from "@material-ui/icons";
 import {
   withModulesManager,
   formatMessage,
@@ -146,24 +146,47 @@ class DocumentSearcher extends Component {
     } = this.props;
 
     return (
-      <Searcher
-        module="claimlens"
-        FilterPane={DocumentFilter}
-        fetch={this.fetch}
-        items={documents}
-        itemsPageInfo={documentsPageInfo}
-        fetchingItems={fetchingDocuments}
-        errorItems={errorDocuments}
-        tableTitle={formatMessage(intl, "claimlens", "searcher.title")}
-        headers={this.headers}
-        itemFormatters={this.itemFormatters}
-        sorts={this.sorts}
-        rowsPerPageOptions={this.rowsPerPageOptions}
-        defaultPageSize={this.defaultPageSize}
-        rowIdentifier={this.rowIdentifier}
-        filtersToQueryParams={this.filtersToQueryParams}
-        defaultOrderBy="-dateCreated"
-      />
+      <>
+        {!fetchingDocuments && documents && documents.length === 0 && (
+          <Box textAlign="center" py={4}>
+            <Typography variant="body1" color="textSecondary" gutterBottom>
+              {formatMessage(intl, "claimlens", "documents.empty")}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Add />}
+              onClick={() =>
+                historyPush(
+                  this.props.modulesManager,
+                  this.props.history,
+                  "claimlens.route.upload"
+                )
+              }
+            >
+              {formatMessage(intl, "claimlens", "documents.uploadFirst")}
+            </Button>
+          </Box>
+        )}
+        <Searcher
+          module="claimlens"
+          FilterPane={DocumentFilter}
+          fetch={this.fetch}
+          items={documents}
+          itemsPageInfo={documentsPageInfo}
+          fetchingItems={fetchingDocuments}
+          errorItems={errorDocuments}
+          tableTitle={formatMessage(intl, "claimlens", "searcher.title")}
+          headers={this.headers}
+          itemFormatters={this.itemFormatters}
+          sorts={this.sorts}
+          rowsPerPageOptions={this.rowsPerPageOptions}
+          defaultPageSize={this.defaultPageSize}
+          rowIdentifier={this.rowIdentifier}
+          filtersToQueryParams={this.filtersToQueryParams}
+          defaultOrderBy="-dateCreated"
+        />
+      </>
     );
   }
 }

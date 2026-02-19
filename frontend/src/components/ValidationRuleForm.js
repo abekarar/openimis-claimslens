@@ -26,6 +26,7 @@ import {
   RULE_TYPES,
   SEVERITY_LEVELS,
 } from "../constants";
+import JsonEditor from "./JsonEditor";
 
 const styles = (theme) => ({
   paper: { padding: theme.spacing(3) },
@@ -131,7 +132,7 @@ class ValidationRuleForm extends Component {
     historyPush(
       this.props.modulesManager,
       this.props.history,
-      "claimlens.route.validationRules"
+      "claimlens.route.settings"
     );
   };
 
@@ -202,16 +203,11 @@ class ValidationRuleForm extends Component {
             </FormControl>
           </Grid>
           <Grid item xs={12}>
-            <TextField
-              className={classes.field}
-              fullWidth
-              multiline
-              rows={8}
-              variant="outlined"
+            <JsonEditor
               label={formatMessage(intl, "claimlens", "validationRule.ruleDefinition")}
               value={ruleDefinition}
-              onChange={this.handleChange("ruleDefinition")}
-              placeholder='{"conditions": [], "actions": []}'
+              onChange={(val) => this.setState({ ruleDefinition: val, dirty: true })}
+              height="250px"
             />
           </Grid>
           <Grid item xs={12}>

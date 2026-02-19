@@ -2,6 +2,7 @@ import logging
 import uuid as uuid_lib
 
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.utils.translation import gettext as _
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -94,3 +95,24 @@ def health_check(request):
     results["status"] = "ok" if overall else "degraded"
 
     return Response(results)
+
+
+@api_view(["GET"])
+@permission_classes([checkUserWithRights(ClaimlensConfig.gql_query_documents_perms)])
+def download_document(request, document_uuid):
+    try:
+        doc = Document.objects.get(uuid=document_uuid)
+    except Document.DoesNotExist:
+        return Response({"error": "Document not found"}, status=404)
+
+    storage = ClaimlensStorage()
+    try:
+        data = storage.read(doc.storage_key)
+    except Exception as e:
+        logger.error("Failed to read document %s from storage: %s", document_uuid, e)
+        return Response({"error": "Failed to retrieve document"}, status=500)
+
+    response = HttpResponse(data, content_type=doc.mime_type)
+    response["Content-Disposition"] = f'inline; filename="{doc.original_filename}"'
+    response["Cache-Control"] = "private, max-age=3600"
+    return response

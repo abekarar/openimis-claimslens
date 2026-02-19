@@ -1,12 +1,10 @@
 import React, { Component } from "react";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
-import {
-  Paper, Typography, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Grid,
-} from "@material-ui/core";
+import { Paper, Typography, Grid } from "@material-ui/core";
 import { formatMessage } from "@openimis/fe-core";
 import ConfidenceBar from "./ConfidenceBar";
+import JsonViewToggle from "./JsonViewToggle";
 
 const styles = (theme) => ({
   paper: { padding: theme.spacing(2), marginBottom: theme.spacing(2) },
@@ -16,12 +14,31 @@ const styles = (theme) => ({
 });
 
 class ExtractionResultPanel extends Component {
+  state = {
+    parsedFields: null,
+    parsedConfidences: null,
+    lastExtractionResult: null,
+  };
+
+  static getDerivedStateFromProps(props, state) {
+    if (props.extractionResult !== state.lastExtractionResult) {
+      const rawFields = props.extractionResult?.structuredData || {};
+      const rawConfidences = props.extractionResult?.fieldConfidences || {};
+      return {
+        parsedFields: typeof rawFields === "string" ? JSON.parse(rawFields) : rawFields,
+        parsedConfidences: typeof rawConfidences === "string" ? JSON.parse(rawConfidences) : rawConfidences,
+        lastExtractionResult: props.extractionResult,
+      };
+    }
+    return null;
+  }
+
   render() {
     const { classes, intl, extractionResult } = this.props;
     if (!extractionResult) return null;
 
-    const fields = extractionResult.structuredData || {};
-    const confidences = extractionResult.fieldConfidences || {};
+    const fields = this.state.parsedFields;
+    const confidences = this.state.parsedConfidences;
 
     return (
       <Paper className={classes.paper}>
@@ -50,36 +67,7 @@ class ExtractionResultPanel extends Component {
           </Grid>
         </Grid>
 
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  {formatMessage(intl, "claimlens", "extraction.field")}
-                </TableCell>
-                <TableCell>
-                  {formatMessage(intl, "claimlens", "extraction.value")}
-                </TableCell>
-                <TableCell style={{ width: 200 }}>
-                  {formatMessage(intl, "claimlens", "extraction.confidence")}
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Object.entries(fields).map(([key, value]) => (
-                <TableRow key={key}>
-                  <TableCell>{key}</TableCell>
-                  <TableCell>
-                    {typeof value === "object" ? JSON.stringify(value) : String(value)}
-                  </TableCell>
-                  <TableCell>
-                    <ConfidenceBar value={confidences[key] || 0} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <JsonViewToggle data={fields} confidences={confidences} />
       </Paper>
     );
   }

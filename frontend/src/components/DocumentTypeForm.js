@@ -9,6 +9,7 @@ import {
 } from "@material-ui/core";
 import { withModulesManager, formatMessage } from "@openimis/fe-core";
 import { createDocumentType, updateDocumentType } from "../actions";
+import JsonEditor from "./JsonEditor";
 
 const styles = (theme) => ({
   field: { marginBottom: theme.spacing(2) },
@@ -24,8 +25,12 @@ class DocumentTypeForm extends Component {
     code: dt ? dt.code || "" : "",
     name: dt ? dt.name || "" : "",
     classificationHints: dt ? dt.classificationHints || "" : "",
-    extractionTemplate: dt && dt.extractionTemplate ? JSON.stringify(dt.extractionTemplate, null, 2) : "",
-    fieldDefinitions: dt && dt.fieldDefinitions ? JSON.stringify(dt.fieldDefinitions, null, 2) : "",
+    extractionTemplate: dt && dt.extractionTemplate
+      ? (typeof dt.extractionTemplate === "string" ? dt.extractionTemplate : JSON.stringify(dt.extractionTemplate, null, 2))
+      : "",
+    fieldDefinitions: dt && dt.fieldDefinitions
+      ? (typeof dt.fieldDefinitions === "string" ? dt.fieldDefinitions : JSON.stringify(dt.fieldDefinitions, null, 2))
+      : "",
     isActive: dt ? !!dt.isActive : true,
     jsonError: null,
   });
@@ -110,27 +115,19 @@ class DocumentTypeForm extends Component {
             value={classificationHints}
             onChange={this.handleChange("classificationHints")}
           />
-          <TextField
-            className={classes.field}
-            fullWidth
-            multiline
-            rows={4}
+          <JsonEditor
             label={formatMessage(intl, "claimlens", "documentType.extractionTemplate")}
             value={extractionTemplate}
-            onChange={this.handleChange("extractionTemplate")}
-            error={!!jsonError}
-            helperText={jsonError}
+            onChange={(val) => this.setState({ extractionTemplate: val, jsonError: null })}
+            error={jsonError}
+            height="150px"
           />
-          <TextField
-            className={classes.field}
-            fullWidth
-            multiline
-            rows={4}
+          <JsonEditor
             label={formatMessage(intl, "claimlens", "documentType.fieldDefinitions")}
             value={fieldDefinitions}
-            onChange={this.handleChange("fieldDefinitions")}
-            error={!!jsonError}
-            helperText={jsonError}
+            onChange={(val) => this.setState({ fieldDefinitions: val, jsonError: null })}
+            error={jsonError}
+            height="150px"
           />
           <FormControlLabel
             control={

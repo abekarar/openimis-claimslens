@@ -3,12 +3,15 @@ import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
-import { Button, CircularProgress } from "@material-ui/core";
+import { Button, CircularProgress, Grid, Typography, Box } from "@material-ui/core";
+import { NavigateNext } from "@material-ui/icons";
 import {
   withModulesManager,
   formatMessage,
   journalize,
   coreConfirm,
+  withHistory,
+  historyPush,
 } from "@openimis/fe-core";
 import {
   fetchDocument,
@@ -19,6 +22,7 @@ import {
   reviewRegistryProposal,
   applyRegistryProposal,
 } from "../actions";
+import DocumentPreviewPanel from "./DocumentPreviewPanel";
 import DocumentMetadataPanel from "./DocumentMetadataPanel";
 import ExtractionResultPanel from "./ExtractionResultPanel";
 import ProcessingTimeline from "./ProcessingTimeline";
@@ -30,15 +34,40 @@ import LinkClaimDialog from "./LinkClaimDialog";
 import {
   STATUS_PENDING,
   STATUS_COMPLETED,
+  STATUS_FAILED,
   PROCESSING_STATUSES,
   TERMINAL_STATUSES,
-  POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
 } from "../constants";
+
+const POLL_FAST_MS = 3000;
+const POLL_SLOW_MS = 5000;
+const POLL_FAST_COUNT = 10;
 
 const styles = (theme) => ({
   actions: { marginBottom: theme.spacing(2) },
   validateButton: { marginLeft: theme.spacing(1) },
+  breadcrumbs: {
+    display: "flex",
+    alignItems: "center",
+    marginBottom: theme.spacing(2),
+    color: theme.palette.text.secondary,
+  },
+  breadcrumbLink: {
+    cursor: "pointer",
+    color: theme.palette.primary.main,
+    "&:hover": { textDecoration: "underline" },
+  },
+  loadingContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 200,
+  },
+  errorContainer: {
+    padding: theme.spacing(3),
+    textAlign: "center",
+  },
 });
 
 class DocumentForm extends Component {
@@ -80,24 +109,31 @@ class DocumentForm extends Component {
   startPollingIfNeeded() {
     const { document: doc } = this.props;
     if (doc && PROCESSING_STATUSES.includes(doc.status)) {
-      this.pollInterval = setInterval(() => {
-        if (this.state.pollCount >= POLL_MAX_ATTEMPTS) {
-          this.stopPolling();
-          return;
-        }
-        this.props.fetchDocument(
-          this.props.modulesManager,
-          this.props.document_uuid
-        );
-        this.setState((prev) => ({ pollCount: prev.pollCount + 1 }));
-      }, POLL_INTERVAL_MS);
+      this.schedulePoll();
     }
   }
 
+  schedulePoll() {
+    const interval = this.state.pollCount < POLL_FAST_COUNT ? POLL_FAST_MS : POLL_SLOW_MS;
+    this.pollTimeout = setTimeout(() => {
+      if (this.state.pollCount >= POLL_MAX_ATTEMPTS) {
+        this.stopPolling();
+        return;
+      }
+      this.props.fetchDocument(
+        this.props.modulesManager,
+        this.props.document_uuid
+      );
+      this.setState((prev) => ({ pollCount: prev.pollCount + 1 }), () => {
+        this.schedulePoll();
+      });
+    }, interval);
+  }
+
   stopPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-      this.pollInterval = null;
+    if (this.pollTimeout) {
+      clearTimeout(this.pollTimeout);
+      this.pollTimeout = null;
     }
   }
 
@@ -185,8 +221,13 @@ class DocumentForm extends Component {
 
   render() {
     const { classes, intl, document: doc, fetchingDocument, submittingMutation } = this.props;
+
     if (fetchingDocument || !doc) {
-      return <CircularProgress />;
+      return (
+        <Box className={classes.loadingContainer}>
+          <CircularProgress />
+        </Box>
+      );
     }
 
     const canProcess = doc.status === STATUS_PENDING;
@@ -198,77 +239,115 @@ class DocumentForm extends Component {
 
     return (
       <div>
-        {canProcess && (
-          <div className={classes.actions}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={this.handleProcess}
-              disabled={submittingMutation}
-            >
-              {formatMessage(intl, "claimlens", "action.process")}
-            </Button>
-          </div>
-        )}
+        <div className={classes.breadcrumbs}>
+          <Typography
+            variant="body2"
+            className={classes.breadcrumbLink}
+            onClick={() => historyPush(this.props.modulesManager, this.props.history, "claimlens.route.documents")}
+          >
+            {formatMessage(intl, "claimlens", "menu.documents")}
+          </Typography>
+          <NavigateNext fontSize="small" />
+          <Typography variant="body2">
+            {formatMessage(intl, "claimlens", "document.detailTitle")}
+          </Typography>
+        </div>
 
-        {isProcessing && (
-          <div className={classes.actions}>
-            <Button variant="outlined" disabled>
-              <CircularProgress size={16} style={{ marginRight: 8 }} />
-              {formatMessage(intl, "claimlens", "action.processing")}
-            </Button>
-          </div>
-        )}
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <DocumentPreviewPanel
+              documentUuid={doc.uuid}
+              mimeType={doc.mimeType}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            {canProcess && (
+              <div className={classes.actions}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={this.handleProcess}
+                  disabled={submittingMutation}
+                >
+                  {formatMessage(intl, "claimlens", "action.process")}
+                </Button>
+              </div>
+            )}
 
-        {canValidate && (
-          <div className={classes.actions}>
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.validateButton}
-              onClick={this.handleRunValidation}
-              disabled={submittingMutation}
-            >
-              {formatMessage(intl, "claimlens", "action.runValidation")}
-            </Button>
-          </div>
-        )}
+            {isProcessing && (
+              <div className={classes.actions}>
+                <Button variant="outlined" disabled>
+                  <CircularProgress size={16} style={{ marginRight: 8 }} />
+                  {formatMessage(intl, "claimlens", "action.processing")}
+                </Button>
+              </div>
+            )}
 
-        {doc.status === STATUS_COMPLETED && !doc.claimUuid && (
-          <div className={classes.actions}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => this.setState({ linkClaimOpen: true })}
-              disabled={submittingMutation}
-            >
-              {formatMessage(intl, "claimlens", "action.linkClaim")}
-            </Button>
-          </div>
-        )}
+            {canValidate && (
+              <div className={classes.actions}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  className={classes.validateButton}
+                  onClick={this.handleRunValidation}
+                  disabled={submittingMutation}
+                >
+                  {formatMessage(intl, "claimlens", "action.runValidation")}
+                </Button>
+              </div>
+            )}
 
-        <ProcessingTimeline status={doc.status} />
-        <DocumentMetadataPanel document={doc} />
-        {doc.extractionResult && (
-          <ExtractionResultPanel extractionResult={doc.extractionResult} />
-        )}
-        {doc.validationResults && doc.validationResults.length > 0 && (
-          <ValidationResultPanel validationResults={doc.validationResults} />
-        )}
-        {findings.length > 0 && (
-          <ValidationFindingsPanel
-            findings={findings}
-            onResolveFinding={this.handleResolveFinding}
-          />
-        )}
-        {proposals.length > 0 && (
-          <RegistryUpdatePanel
-            proposals={proposals}
-            onReviewProposal={this.handleReviewProposal}
-            onApplyProposal={this.handleApplyProposal}
-          />
-        )}
-        <AuditLogPanel auditLogs={this.props.auditLogs} />
+            {doc.status === STATUS_COMPLETED && !doc.claimUuid && (
+              <div className={classes.actions}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => this.setState({ linkClaimOpen: true })}
+                  disabled={submittingMutation}
+                >
+                  {formatMessage(intl, "claimlens", "action.linkClaim")}
+                </Button>
+              </div>
+            )}
+
+            {doc.status === STATUS_FAILED && (
+              <div className={classes.actions}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={this.handleProcess}
+                  disabled={submittingMutation}
+                >
+                  {formatMessage(intl, "claimlens", "action.retryProcessing")}
+                </Button>
+              </div>
+            )}
+
+            <ProcessingTimeline status={doc.status} />
+            <DocumentMetadataPanel document={doc} />
+            {doc.extractionResult && (
+              <ExtractionResultPanel extractionResult={doc.extractionResult} />
+            )}
+            {doc.validationResults && doc.validationResults.length > 0 && (
+              <ValidationResultPanel validationResults={doc.validationResults} />
+            )}
+            {findings.length > 0 && (
+              <ValidationFindingsPanel
+                findings={findings}
+                onResolveFinding={this.handleResolveFinding}
+              />
+            )}
+            {proposals.length > 0 && (
+              <RegistryUpdatePanel
+                proposals={proposals}
+                onReviewProposal={this.handleReviewProposal}
+                onApplyProposal={this.handleApplyProposal}
+              />
+            )}
+            <AuditLogPanel auditLogs={this.props.auditLogs} />
+          </Grid>
+        </Grid>
+
         <LinkClaimDialog
           open={this.state.linkClaimOpen}
           onClose={this.handleLinkClaimClose}
@@ -303,8 +382,10 @@ const mapDispatchToProps = (dispatch) =>
   );
 
 export default withModulesManager(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(injectIntl(withStyles(styles)(DocumentForm)))
+  withHistory(
+    connect(
+      mapStateToProps,
+      mapDispatchToProps
+    )(injectIntl(withStyles(styles)(DocumentForm)))
+  )
 );

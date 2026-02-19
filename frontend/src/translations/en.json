@@ -54,6 +54,9 @@
   "claimlens.extraction.aggregateConfidence": "Aggregate Confidence",
   "claimlens.extraction.processingTime": "Processing Time",
   "claimlens.extraction.tokensUsed": "Tokens Used",
+  "claimlens.extraction.fields": "Extracted Fields",
+  "claimlens.extraction.treeView": "Tree View",
+  "claimlens.extraction.jsonView": "JSON",
 
   "claimlens.timeline.title": "Processing Timeline",
 
@@ -272,6 +275,11 @@
   "claimlens.linkClaim.save": "Link",
 
   "claimlens.settings.pageTitle": "ClaimLens Settings",
+  "claimlens.settings.tab.general": "General",
+  "claimlens.settings.tab.documentTypes": "Document Types",
+  "claimlens.settings.tab.engineConfigs": "Engine Configs",
+  "claimlens.settings.tab.routing": "Routing",
+  "claimlens.settings.tab.validationRules": "Validation Rules",
   "claimlens.moduleConfig.title": "Module Configuration",
   "claimlens.moduleConfig.autoApproveThreshold": "Auto-Approve Threshold (0-1)",
   "claimlens.moduleConfig.reviewThreshold": "Review Threshold (0-1)",
@@ -328,5 +336,20 @@
   "claimlens.engineRoutingRule.form.createTitle": "Add Engine Routing Rule",
   "claimlens.engineRoutingRule.form.editTitle": "Edit Engine Routing Rule",
   "claimlens.engineRoutingRule.mutation.create": "Create Engine Routing Rule",
-  "claimlens.engineRoutingRule.mutation.update": "Update Engine Routing Rule"
+  "claimlens.engineRoutingRule.mutation.update": "Update Engine Routing Rule",
+
+  "claimlens.preview.title": "Document Preview",
+  "claimlens.preview.unsupported": "Preview not available for this file type",
+  "claimlens.upload.replaceFile": "Replace File",
+  "claimlens.upload.removeFile": "Remove",
+  "claimlens.action.retryProcessing": "Retry Processing",
+
+  "claimlens.documents.empty": "No documents yet.",
+  "claimlens.documents.uploadFirst": "Upload Your First Document",
+  "claimlens.empty.noDocumentTypes": "Configure document types in Settings to enable classification.",
+  "claimlens.empty.noValidationRules": "Add validation rules in Settings to enable downstream validation.",
+  "claimlens.empty.noExtractionResult": "This document hasn't been processed yet.",
+  "claimlens.empty.goToSettings": "Go to Settings",
+  "claimlens.breadcrumb.documents": "Documents",
+  "claimlens.breadcrumb.documentDetail": "Document Detail"
 }

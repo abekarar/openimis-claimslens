@@ -4,9 +4,9 @@ import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Button, LinearProgress, Box, TextField,
+  Paper, Typography, Button, LinearProgress, Box, TextField, IconButton,
 } from "@material-ui/core";
-import { CloudUpload, CheckCircle, Error as ErrorIcon } from "@material-ui/icons";
+import { CloudUpload, CheckCircle, Error as ErrorIcon, Delete, Refresh } from "@material-ui/icons";
 import {
   withModulesManager,
   formatMessage,
@@ -14,6 +14,7 @@ import {
   historyPush,
 } from "@openimis/fe-core";
 import { uploadDocument } from "../actions";
+import DocumentPreviewPanel from "./DocumentPreviewPanel";
 import {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE_BYTES,
@@ -37,7 +38,8 @@ const styles = (theme) => ({
     backgroundColor: theme.palette.action.hover,
   },
   icon: { fontSize: 48, color: theme.palette.text.secondary, marginBottom: theme.spacing(1) },
-  fileInfo: { marginTop: theme.spacing(2), marginBottom: theme.spacing(2) },
+  fileInfo: { marginTop: theme.spacing(2), marginBottom: theme.spacing(1) },
+  fileActions: { marginBottom: theme.spacing(2), display: "flex", gap: theme.spacing(1) },
   actions: { marginTop: theme.spacing(2) },
   progress: { marginTop: theme.spacing(2) },
   success: { color: theme.palette.success.main, marginTop: theme.spacing(2) },
@@ -47,6 +49,7 @@ const styles = (theme) => ({
 class UploadPanel extends Component {
   state = {
     selectedFile: null,
+    previewUrl: null,
     validationError: null,
     dragOver: false,
     language: "",
@@ -54,6 +57,26 @@ class UploadPanel extends Component {
   };
 
   fileInputRef = React.createRef();
+
+  componentDidUpdate(prevProps) {
+    if (!prevProps.uploadResponse && this.props.uploadResponse) {
+      const doc = this.props.uploadResponse.document;
+      if (doc && doc.uuid) {
+        historyPush(
+          this.props.modulesManager,
+          this.props.history,
+          "claimlens.route.document",
+          [doc.uuid]
+        );
+      }
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.state.previewUrl) {
+      URL.revokeObjectURL(this.state.previewUrl);
+    }
+  }
 
   handleDragOver = (e) => {
     e.preventDefault();
@@ -87,9 +110,14 @@ class UploadPanel extends Component {
   handleFileSelect = (file) => {
     const { intl } = this.props;
 
+    if (this.state.previewUrl) {
+      URL.revokeObjectURL(this.state.previewUrl);
+    }
+
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       this.setState({
         selectedFile: null,
+        previewUrl: null,
         validationError: formatMessage(intl, "claimlens", "upload.invalidType"),
       });
       return;
@@ -98,13 +126,30 @@ class UploadPanel extends Component {
     if (file.size > MAX_FILE_SIZE_BYTES) {
       this.setState({
         selectedFile: null,
+        previewUrl: null,
         validationError: formatMessage(intl, "claimlens", "upload.tooLarge")
           .replace("{maxSize}", MAX_FILE_SIZE_MB),
       });
       return;
     }
 
-    this.setState({ selectedFile: file, validationError: null });
+    this.setState({
+      selectedFile: file,
+      previewUrl: URL.createObjectURL(file),
+      validationError: null,
+    });
+  };
+
+  handleRemoveFile = () => {
+    if (this.state.previewUrl) {
+      URL.revokeObjectURL(this.state.previewUrl);
+    }
+    this.setState({ selectedFile: null, previewUrl: null, validationError: null });
+    this.fileInputRef.current.value = "";
+  };
+
+  handleReplaceFile = () => {
+    this.fileInputRef.current.click();
   };
 
   handleUpload = () => {
@@ -132,7 +177,7 @@ class UploadPanel extends Component {
 
   render() {
     const { classes, intl, uploading, uploadProgress, uploadResponse, uploadError } = this.props;
-    const { selectedFile, validationError, dragOver, language, claimUuid } = this.state;
+    const { selectedFile, previewUrl, validationError, dragOver, language, claimUuid } = this.state;
 
     return (
       <Paper className={classes.paper}>
@@ -140,27 +185,30 @@ class UploadPanel extends Component {
           {formatMessage(intl, "claimlens", "upload.title")}
         </Typography>
 
-        <div
-          className={`${classes.dropzone} ${dragOver ? classes.dropzoneActive : ""}`}
-          onDragOver={this.handleDragOver}
-          onDragLeave={this.handleDragLeave}
-          onDrop={this.handleDrop}
-          onClick={this.handleClick}
-        >
-          <CloudUpload className={classes.icon} />
-          <Typography>
-            {dragOver
-              ? formatMessage(intl, "claimlens", "upload.dropzoneActive")
-              : formatMessage(intl, "claimlens", "upload.dropzone")}
-          </Typography>
-          <input
-            ref={this.fileInputRef}
-            type="file"
-            accept={ALLOWED_MIME_TYPES.join(",")}
-            style={{ display: "none" }}
-            onChange={this.handleInputChange}
-          />
-        </div>
+        {!selectedFile && (
+          <div
+            className={`${classes.dropzone} ${dragOver ? classes.dropzoneActive : ""}`}
+            onDragOver={this.handleDragOver}
+            onDragLeave={this.handleDragLeave}
+            onDrop={this.handleDrop}
+            onClick={this.handleClick}
+          >
+            <CloudUpload className={classes.icon} />
+            <Typography>
+              {dragOver
+                ? formatMessage(intl, "claimlens", "upload.dropzoneActive")
+                : formatMessage(intl, "claimlens", "upload.dropzone")}
+            </Typography>
+          </div>
+        )}
+
+        <input
+          ref={this.fileInputRef}
+          type="file"
+          accept={ALLOWED_MIME_TYPES.join(",")}
+          style={{ display: "none" }}
+          onChange={this.handleInputChange}
+        />
 
         {validationError && (
           <Typography className={classes.error}>
@@ -169,12 +217,37 @@ class UploadPanel extends Component {
           </Typography>
         )}
 
-        {selectedFile && !validationError && (
-          <Typography className={classes.fileInfo}>
-            {formatMessage(intl, "claimlens", "upload.fileSelected")
-              .replace("{filename}", selectedFile.name)
-              .replace("{size}", this.formatFileSize(selectedFile.size))}
-          </Typography>
+        {selectedFile && previewUrl && !validationError && (
+          <>
+            <DocumentPreviewPanel
+              objectUrl={previewUrl}
+              mimeType={selectedFile.type}
+            />
+            <Typography className={classes.fileInfo}>
+              {formatMessage(intl, "claimlens", "upload.fileSelected")
+                .replace("{filename}", selectedFile.name)
+                .replace("{size}", this.formatFileSize(selectedFile.size))}
+            </Typography>
+            <div className={classes.fileActions}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Refresh />}
+                onClick={this.handleReplaceFile}
+              >
+                {formatMessage(intl, "claimlens", "upload.replaceFile")}
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                color="secondary"
+                startIcon={<Delete />}
+                onClick={this.handleRemoveFile}
+              >
+                {formatMessage(intl, "claimlens", "upload.removeFile")}
+              </Button>
+            </div>
+          </>
         )}
 
         <TextField

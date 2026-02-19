@@ -16,6 +16,10 @@
     "format": "prettier src -w",
     "prepare": "npm run build"
   },
+  "dependencies": {
+    "ace-builds": "^1.32.0",
+    "react-ace": "^10.1.0"
+  },
   "peerDependencies": {
     "react-intl": "^5.8.1"
   },
