@@ -1,4 +1,5 @@
 import React from "react";
+import { Redirect } from "react-router-dom";
 import { Dashboard, FindInPage, Tune } from "@material-ui/icons";
 import { FormattedMessage } from "@openimis/fe-core";
 import ClaimLensMainMenu from "./components/ClaimLensMainMenu";
@@ -62,6 +63,7 @@ const DEFAULT_CONFIG = {
     { key: "claimlens.RuleTypePicker.projection", ref: null },
   ],
   "core.Router": [
+    { path: "home", component: () => <Redirect to={"/" + ROUTE_CLAIMLENS_DASHBOARD} /> },
     { path: ROUTE_CLAIMLENS_DOCUMENTS, component: DocumentsPage },
     { path: ROUTE_CLAIMLENS_DOCUMENT + "/:document_uuid", component: DocumentDetailPage },
     { path: ROUTE_CLAIMLENS_UPLOAD, component: UploadPage },
@@ -139,6 +141,7 @@ export {
   fetchEngineRoutingRules,
   createEngineRoutingRule,
   updateEngineRoutingRule,
+  fetchDocumentCount,
 } from "./actions";
 
 export const ClaimLensModule = (cfg) => {

@@ -391,5 +391,21 @@
   "claimlens.dashboard.failed": "Failed",
   "claimlens.dashboard.reviewRequired": "Review Required",
   "claimlens.dashboard.recentDocuments": "Recent Documents",
-  "claimlens.dashboard.noDocuments": "No documents yet"
+  "claimlens.dashboard.noDocuments": "No documents yet",
+
+  "claimlens.validation.overallStatus": "Overall Status",
+  "claimlens.validation.field": "Field",
+
+  "claimlens.auditLog.action.upload": "Upload",
+  "claimlens.auditLog.action.status_change": "Status Change",
+  "claimlens.auditLog.action.preprocess": "Preprocessing",
+  "claimlens.auditLog.action.classify": "Classification",
+  "claimlens.auditLog.action.extract": "Extraction",
+  "claimlens.auditLog.action.validate": "Validation",
+  "claimlens.auditLog.action.error": "Error",
+  "claimlens.auditLog.action.process": "Processing",
+
+  "claimlens.action.resolveFinding": "Resolve Validation Finding",
+  "claimlens.action.reviewProposal": "Review Registry Proposal",
+  "claimlens.action.applyProposal": "Apply Registry Proposal"
 }

@@ -92,8 +92,21 @@ class ExtractionResultPanel extends Component {
               {formatMessage(intl, "claimlens", this.state.showRawResponse ? "extraction.hideRawResponse" : "extraction.showRawResponse")}
             </Button>
             <Collapse in={this.state.showRawResponse}>
-              <Box className={classes.rawResponse} mt={1}>
-                {extractionResult.rawLlmResponse}
+              <Box mt={1}>
+                {(() => {
+                  try {
+                    const parsed = typeof extractionResult.rawLlmResponse === "string"
+                      ? JSON.parse(extractionResult.rawLlmResponse)
+                      : extractionResult.rawLlmResponse;
+                    return <JsonViewToggle data={parsed} />;
+                  } catch (e) {
+                    return (
+                      <pre className={classes.rawResponse}>
+                        {extractionResult.rawLlmResponse}
+                      </pre>
+                    );
+                  }
+                })()}
               </Box>
             </Collapse>
           </div>

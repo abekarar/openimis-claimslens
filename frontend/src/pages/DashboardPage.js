@@ -28,7 +28,7 @@ import {
   formatMessage,
   formatDateFromISO,
 } from "@openimis/fe-core";
-import { fetchDocuments } from "../actions";
+import { fetchDocuments, fetchDocumentCount } from "../actions";
 import StatusBadge from "../components/StatusBadge";
 import ConfidenceBar from "../components/ConfidenceBar";
 import {
@@ -70,77 +70,24 @@ const styles = (theme) => ({
 });
 
 class DashboardPage extends Component {
-  state = {
-    totalCount: null,
-    completedCount: null,
-    failedCount: null,
-    reviewCount: null,
-    recentDocs: null,
-    loading: true,
-  };
-
   componentDidMount() {
-    this.loadDashboardData();
-  }
-
-  loadDashboardData() {
     const { modulesManager } = this.props;
-
-    // Fetch total count
     this.props.fetchDocuments(modulesManager, ["first: 10", 'orderBy: ["-dateCreated"]']);
-
-    // We'll derive counts from state after fetch
-    this.setState({ loading: true });
-  }
-
-  componentDidUpdate(prevProps) {
-    if (
-      this.props.documents !== prevProps.documents &&
-      this.props.fetchedDocuments &&
-      !this.props.fetchingDocuments
-    ) {
-      this.setState({
-        recentDocs: this.props.documents,
-        totalCount: this.props.documentsPageInfo?.totalCount || 0,
-        loading: false,
-      });
-
-      // Count statuses from the fetched total
-      if (!this.state.completedCount && this.state.completedCount !== 0) {
-        this.deriveStatusCounts();
-      }
-    }
-  }
-
-  deriveStatusCounts() {
-    const { modulesManager } = this.props;
-
-    // Fetch status-specific counts using separate queries
-    const fetchCount = (statusFilter) => {
-      return new Promise((resolve) => {
-        const payload = [`first: 1`, `status: "${statusFilter}"`];
-        // Use a direct graphql call approach
-        this.props.fetchDocuments(modulesManager, payload);
-        // Since we can't easily do parallel distinct fetches with the same action,
-        // we'll count from the page info of the main query
-        resolve(null);
-      });
-    };
-
-    // For now, we'll show total count from the main query
-    // and compute status counts on next loads
-    this.setState({
-      completedCount: this.props.documents?.filter((d) => d.status === STATUS_COMPLETED).length ?? "-",
-      failedCount: this.props.documents?.filter((d) => d.status === STATUS_FAILED).length ?? "-",
-      reviewCount: this.props.documents?.filter((d) => d.status === STATUS_REVIEW_REQUIRED).length ?? "-",
-    });
+    this.props.fetchDocumentCount(modulesManager, STATUS_COMPLETED, "CLAIMLENS_DASHBOARD_COUNT_COMPLETED");
+    this.props.fetchDocumentCount(modulesManager, STATUS_FAILED, "CLAIMLENS_DASHBOARD_COUNT_FAILED");
+    this.props.fetchDocumentCount(modulesManager, STATUS_REVIEW_REQUIRED, "CLAIMLENS_DASHBOARD_COUNT_REVIEW");
   }
 
   render() {
-    const { classes, intl, rights, modulesManager, history } = this.props;
-    const { totalCount, completedCount, failedCount, reviewCount, recentDocs, loading } = this.state;
+    const { classes, intl, rights, modulesManager, history,
+      documents, documentsPageInfo, fetchingDocuments,
+      dashboardCompletedCount, dashboardFailedCount, dashboardReviewCount,
+    } = this.props;
 
     if (!rights.includes(RIGHT_CLAIMLENS_DOCUMENTS)) return null;
+
+    const totalCount = documentsPageInfo?.totalCount;
+    const loading = fetchingDocuments;
 
     return (
       <div className={classes.page}>
@@ -165,7 +112,7 @@ class DashboardPage extends Component {
             <Card>
               <CardContent className={classes.statCard}>
                 <Typography className={`${classes.statValue} ${classes.completedValue}`}>
-                  {completedCount != null ? completedCount : "-"}
+                  {dashboardCompletedCount != null ? dashboardCompletedCount : "-"}
                 </Typography>
                 <Typography className={classes.statLabel}>
                   {formatMessage(intl, "claimlens", "dashboard.completed")}
@@ -177,7 +124,7 @@ class DashboardPage extends Component {
             <Card>
               <CardContent className={classes.statCard}>
                 <Typography className={`${classes.statValue} ${classes.failedValue}`}>
-                  {failedCount != null ? failedCount : "-"}
+                  {dashboardFailedCount != null ? dashboardFailedCount : "-"}
                 </Typography>
                 <Typography className={classes.statLabel}>
                   {formatMessage(intl, "claimlens", "dashboard.failed")}
@@ -189,7 +136,7 @@ class DashboardPage extends Component {
             <Card>
               <CardContent className={classes.statCard}>
                 <Typography className={`${classes.statValue} ${classes.reviewValue}`}>
-                  {reviewCount != null ? reviewCount : "-"}
+                  {dashboardReviewCount != null ? dashboardReviewCount : "-"}
                 </Typography>
                 <Typography className={classes.statLabel}>
                   {formatMessage(intl, "claimlens", "dashboard.reviewRequired")}
@@ -221,8 +168,8 @@ class DashboardPage extends Component {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {recentDocs && recentDocs.length > 0 ? (
-                  recentDocs.map((doc) => (
+                {documents && documents.length > 0 ? (
+                  documents.map((doc) => (
                     <TableRow key={doc.uuid}>
                       <TableCell>{doc.originalFilename}</TableCell>
                       <TableCell><StatusBadge status={doc.status} /></TableCell>
@@ -276,10 +223,13 @@ const mapStateToProps = (state) => ({
   documentsPageInfo: state.claimlens.documentsPageInfo,
   fetchingDocuments: state.claimlens.fetchingDocuments,
   fetchedDocuments: state.claimlens.fetchedDocuments,
+  dashboardCompletedCount: state.claimlens.dashboardCompletedCount,
+  dashboardFailedCount: state.claimlens.dashboardFailedCount,
+  dashboardReviewCount: state.claimlens.dashboardReviewCount,
 });
 
 const mapDispatchToProps = (dispatch) =>
-  bindActionCreators({ fetchDocuments }, dispatch);
+  bindActionCreators({ fetchDocuments, fetchDocumentCount }, dispatch);
 
 export default withModulesManager(
   withHistory(

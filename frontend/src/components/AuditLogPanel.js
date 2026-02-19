@@ -6,7 +6,7 @@ import {
   TableContainer, TableHead, TableRow, IconButton, Collapse, Box,
 } from "@material-ui/core";
 import { ExpandMore, ExpandLess } from "@material-ui/icons";
-import { formatMessage, formatDateFromISO } from "@openimis/fe-core";
+import { formatMessage, formatDateFromISO, withModulesManager } from "@openimis/fe-core";
 
 const styles = (theme) => ({
   paper: { padding: theme.spacing(2), marginBottom: theme.spacing(2) },
@@ -64,7 +64,7 @@ class AuditLogPanel extends Component {
   }
 
   render() {
-    const { classes, intl, auditLogs } = this.props;
+    const { classes, intl, modulesManager, auditLogs } = this.props;
     const { expandedRows } = this.state;
     const logs = auditLogs || [];
 
@@ -94,8 +94,12 @@ class AuditLogPanel extends Component {
                   const expanded = !!expandedRows[log.uuid];
                   return (
                     <TableRow key={log.uuid}>
-                      <TableCell>{formatDateFromISO(intl, log.dateCreated)}</TableCell>
-                      <TableCell>{log.action || "-"}</TableCell>
+                      <TableCell>{formatDateFromISO(modulesManager, intl, log.dateCreated)}</TableCell>
+                      <TableCell>
+                        {log.action
+                          ? formatMessage(intl, "claimlens", `auditLog.action.${log.action.toLowerCase()}`) || log.action
+                          : "-"}
+                      </TableCell>
                       <TableCell>{log.engineConfig ? log.engineConfig.name : "-"}</TableCell>
                       <TableCell className={classes.detailsCell}>
                         {expandable ? (
@@ -133,4 +137,4 @@ class AuditLogPanel extends Component {
   }
 }
 
-export default injectIntl(withStyles(styles)(AuditLogPanel));
+export default withModulesManager(injectIntl(withStyles(styles)(AuditLogPanel)));

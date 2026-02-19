@@ -85,6 +85,11 @@ const initialState = {
   errorRegistryProposals: null,
   registryProposals: [],
 
+  // Dashboard counts
+  dashboardCompletedCount: null,
+  dashboardFailedCount: null,
+  dashboardReviewCount: null,
+
   // Engine routing rules
   fetchingEngineRoutingRules: false,
   fetchedEngineRoutingRules: false,
@@ -374,6 +379,14 @@ function reducer(state = initialState, action) {
       };
     case "CLAIMLENS_ENGINE_ROUTING_RULES_ERR":
       return { ...state, fetchingEngineRoutingRules: false, errorEngineRoutingRules: formatServerError(action.payload) };
+
+    // Dashboard counts
+    case "CLAIMLENS_DASHBOARD_COUNT_COMPLETED_RESP":
+      return { ...state, dashboardCompletedCount: pageInfo(action.payload.data.claimlensDocuments).totalCount };
+    case "CLAIMLENS_DASHBOARD_COUNT_FAILED_RESP":
+      return { ...state, dashboardFailedCount: pageInfo(action.payload.data.claimlensDocuments).totalCount };
+    case "CLAIMLENS_DASHBOARD_COUNT_REVIEW_RESP":
+      return { ...state, dashboardReviewCount: pageInfo(action.payload.data.claimlensDocuments).totalCount };
 
     // Mutations
     case "CLAIMLENS_MUTATION_REQ":

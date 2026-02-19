@@ -1,15 +1,31 @@
 import React, { Component } from "react";
 import { withStyles } from "@material-ui/core/styles";
-import { LinearProgress, Typography, Box } from "@material-ui/core";
+import { CircularProgress, Typography, Box } from "@material-ui/core";
 import { CONFIDENCE_HIGH, CONFIDENCE_MEDIUM } from "../constants";
 
-const styles = (theme) => ({
-  root: { display: "flex", alignItems: "center", width: "100%" },
-  bar: { flexGrow: 1, marginRight: theme.spacing(1) },
-  label: { minWidth: 45, textAlign: "right" },
-  high: { "& .MuiLinearProgress-bar": { backgroundColor: "#4caf50" } },
-  medium: { "& .MuiLinearProgress-bar": { backgroundColor: "#ff9800" } },
-  low: { "& .MuiLinearProgress-bar": { backgroundColor: "#f44336" } },
+const styles = () => ({
+  root: {
+    position: "relative",
+    display: "inline-flex",
+    width: 48,
+    height: 48,
+  },
+  circle: { position: "absolute", top: 0, left: 0 },
+  bgCircle: { position: "absolute", top: 0, left: 0, color: "#e0e0e0" },
+  labelContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  label: { fontSize: "0.7rem", fontWeight: "bold" },
+  high: { color: "#4caf50" },
+  medium: { color: "#ff9800" },
+  low: { color: "#f44336" },
 });
 
 class ConfidenceBar extends Component {
@@ -22,15 +38,22 @@ class ConfidenceBar extends Component {
 
     return (
       <Box className={classes.root}>
-        <Box className={classes.bar}>
-          <LinearProgress
-            variant="determinate"
-            value={percentage}
-            className={colorClass}
-          />
-        </Box>
-        <Box className={classes.label}>
-          <Typography variant="body2" color="textSecondary">
+        <CircularProgress
+          variant="determinate"
+          value={100}
+          size={48}
+          thickness={4}
+          className={classes.bgCircle}
+        />
+        <CircularProgress
+          variant="determinate"
+          value={percentage}
+          size={48}
+          thickness={4}
+          className={`${classes.circle} ${colorClass}`}
+        />
+        <Box className={classes.labelContainer}>
+          <Typography className={`${classes.label} ${colorClass}`}>
             {percentage}%
           </Typography>
         </Box>

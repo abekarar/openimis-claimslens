@@ -367,8 +367,6 @@ export function uploadDocument(file) {
     const formData = new FormData();
     formData.append("file", file);
 
-    const token = localStorage.getItem("token") || "";
-
     const xhr = new XMLHttpRequest();
 
     xhr.upload.addEventListener("progress", (e) => {
@@ -399,7 +397,10 @@ export function uploadDocument(file) {
     });
 
     xhr.open("POST", url);
-    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.withCredentials = true;
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1]
+      || localStorage.getItem("csrfToken") || "";
+    xhr.setRequestHeader("X-CSRFToken", csrfToken);
     xhr.send(formData);
   };
 }
@@ -607,6 +608,15 @@ export function resolveValidationFinding(id, resolutionStatus, clientMutationLab
     ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_RESOLVE_VALIDATION_FINDING_RESP", "CLAIMLENS_MUTATION_ERR"],
     { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
   );
+}
+
+// --- Dashboard count queries ---
+
+export function fetchDocumentCount(mm, statusFilter, actionType) {
+  const filters = [`first: 0`];
+  if (statusFilter) filters.push(`status: "${statusFilter}"`);
+  const payload = formatPageQueryWithCount("claimlensDocuments", filters, ["uuid"]);
+  return graphql(payload, actionType);
 }
 
 // --- Gap 5: Link document to claim ---
