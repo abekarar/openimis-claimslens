@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
-import { Paper, Typography, Grid } from "@material-ui/core";
+import { Paper, Typography, Grid, Button, Collapse, Box } from "@material-ui/core";
 import { formatMessage } from "@openimis/fe-core";
 import ConfidenceBar from "./ConfidenceBar";
 import JsonViewToggle from "./JsonViewToggle";
@@ -11,6 +11,18 @@ const styles = (theme) => ({
   title: { marginBottom: theme.spacing(2) },
   summary: { marginBottom: theme.spacing(2) },
   label: { fontWeight: "bold", color: theme.palette.text.secondary },
+  rawResponseContainer: { marginTop: theme.spacing(2) },
+  rawResponse: {
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    fontFamily: "monospace",
+    fontSize: "0.8rem",
+    padding: theme.spacing(2),
+    backgroundColor: theme.palette.grey[50],
+    borderRadius: 4,
+    maxHeight: 400,
+    overflow: "auto",
+  },
 });
 
 class ExtractionResultPanel extends Component {
@@ -18,6 +30,7 @@ class ExtractionResultPanel extends Component {
     parsedFields: null,
     parsedConfidences: null,
     lastExtractionResult: null,
+    showRawResponse: false,
   };
 
   static getDerivedStateFromProps(props, state) {
@@ -68,6 +81,23 @@ class ExtractionResultPanel extends Component {
         </Grid>
 
         <JsonViewToggle data={fields} confidences={confidences} />
+
+        {extractionResult.rawLlmResponse && (
+          <div className={classes.rawResponseContainer}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => this.setState((prev) => ({ showRawResponse: !prev.showRawResponse }))}
+            >
+              {formatMessage(intl, "claimlens", this.state.showRawResponse ? "extraction.hideRawResponse" : "extraction.showRawResponse")}
+            </Button>
+            <Collapse in={this.state.showRawResponse}>
+              <Box className={classes.rawResponse} mt={1}>
+                {extractionResult.rawLlmResponse}
+              </Box>
+            </Collapse>
+          </div>
+        )}
       </Paper>
     );
   }

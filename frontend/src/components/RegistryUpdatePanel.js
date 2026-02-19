@@ -144,7 +144,9 @@ class RegistryUpdatePanel extends Component {
             <TableBody>
               {proposals.map((proposal) => (
                 <TableRow key={proposal.uuid}>
-                  <TableCell>{proposal.targetModel}</TableCell>
+                  <TableCell>
+                    {formatMessage(intl, "claimlens", `proposals.targetModel.${proposal.targetModel}`) || proposal.targetModel}
+                  </TableCell>
                   <TableCell>{proposal.fieldName}</TableCell>
                   <TableCell>
                     {proposal.currentValue != null ? String(proposal.currentValue) : "-"}

@@ -85,7 +85,7 @@ class DocumentSearcher extends Component {
     (doc) => this.formatFileSize(doc.fileSize),
     (doc) => <StatusBadge status={doc.status} />,
     (doc) =>
-      doc.documentType ? `${doc.documentType.code}` : "-",
+      doc.documentType ? doc.documentType.name : "-",
     (doc) =>
       doc.classificationConfidence ? (
         <ConfidenceBar value={doc.classificationConfidence} />

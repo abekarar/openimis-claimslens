@@ -83,7 +83,7 @@ class ValidationFindingsPanel extends Component {
                   {formatMessage(intl, "claimlens", "findings.severity")}
                 </TableCell>
                 <TableCell>
-                  {formatMessage(intl, "claimlens", "findings.findingType")}
+                  {formatMessage(intl, "claimlens", "findings.type")}
                 </TableCell>
                 <TableCell>
                   {formatMessage(intl, "claimlens", "findings.field")}
@@ -92,10 +92,10 @@ class ValidationFindingsPanel extends Component {
                   {formatMessage(intl, "claimlens", "findings.description")}
                 </TableCell>
                 <TableCell>
-                  {formatMessage(intl, "claimlens", "findings.rule")}
+                  {formatMessage(intl, "claimlens", "findings.ruleName")}
                 </TableCell>
                 <TableCell>
-                  {formatMessage(intl, "claimlens", "findings.actions")}
+                  {formatMessage(intl, "claimlens", "findings.resolution")}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -110,7 +110,7 @@ class ValidationFindingsPanel extends Component {
                     />
                   </TableCell>
                   <TableCell>
-                    {formatMessage(intl, "claimlens", `findingType.${finding.findingType}`)}
+                    {formatMessage(intl, "claimlens", `findings.type.${finding.findingType}`)}
                   </TableCell>
                   <TableCell>{finding.field || "-"}</TableCell>
                   <TableCell>{finding.description}</TableCell>
