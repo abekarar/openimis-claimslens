@@ -125,7 +125,7 @@ class RegistryUpdatePanel extends Component {
                   {formatMessage(intl, "claimlens", "proposals.targetModel")}
                 </TableCell>
                 <TableCell>
-                  {formatMessage(intl, "claimlens", "proposals.field")}
+                  {formatMessage(intl, "claimlens", "proposals.fieldName")}
                 </TableCell>
                 <TableCell>
                   {formatMessage(intl, "claimlens", "proposals.currentValue")}

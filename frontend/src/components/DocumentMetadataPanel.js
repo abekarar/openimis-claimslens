@@ -107,7 +107,11 @@ class DocumentMetadataPanel extends Component {
             <Typography className={classes.label}>
               {formatMessage(intl, "claimlens", "document.language")}
             </Typography>
-            <Typography className={classes.value}>{doc.language || "-"}</Typography>
+            <Typography className={classes.value}>
+              {doc.language
+                ? formatMessage(intl, "claimlens", `language.${doc.language}`) || doc.language
+                : "-"}
+            </Typography>
           </Grid>
           {doc.engineConfig && (
             <Grid item xs={6}>
@@ -147,7 +151,7 @@ class DocumentMetadataPanel extends Component {
               size="small"
               startIcon={<GetApp />}
               className={classes.downloadButton}
-              href={`/api/claimlens/download/${doc.uuid}/`}
+              href={`/api/claimlens/documents/${doc.uuid}/download/`}
               target="_blank"
             >
               {formatMessage(intl, "claimlens", "document.download")}
