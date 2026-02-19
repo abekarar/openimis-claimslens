@@ -219,7 +219,10 @@ class EngineCapabilityScoreService(BaseService):
             engine_config=engine_config,
             language=language,
             document_type=document_type,
-            defaults={'accuracy_score': 50, 'speed_score': 50, 'is_active': True}
+            defaults={
+                'accuracy_score': 50, 'speed_score': 50, 'is_active': True,
+                'user_created': user, 'user_updated': user,
+            }
         )
 
         # Map confidence (0-1) to score (0-100)
