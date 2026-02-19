@@ -103,7 +103,7 @@ class EngineManagerSelectEngineTest(TestCase, ClaimlensTestDataMixin):
     @patch('claimlens.engine.base.BaseLLMEngine.health_check', return_value=True)
     def test_select_engine_with_scores(self, mock_health):
         config1 = self._create_engine_config(name='Engine A', is_primary=True)
-        config2 = self._create_engine_config(name='Engine B', adapter='gemini')
+        config2 = self._create_engine_config(name='Engine B', adapter='openai_compatible')
 
         EngineCapabilityScore(
             engine_config=config1, language='en',

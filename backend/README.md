@@ -6,7 +6,7 @@ AI-powered OCR extraction from scanned claim documents using LLM vision models.
 
 - Document upload and S3 storage
 - LLM-based document classification and data extraction
-- Support for multiple LLM engines (Mistral Pixtral, Gemini, DeepSeek)
+- Support for multiple LLM engines via OpenAI-compatible API (OpenRouter, Mistral, DeepSeek)
 - Confidence-based routing (auto-approve, review required, failed)
 - Celery-based async processing pipeline
 - Full audit trail

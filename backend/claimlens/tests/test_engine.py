@@ -5,7 +5,6 @@ from claimlens.engine.base import ADAPTER_REGISTRY
 from claimlens.engine.types import LLMResponse
 from claimlens.engine.manager import EngineManager
 from claimlens.engine.adapters.openai_compatible import OpenAICompatibleEngine
-from claimlens.engine.adapters.gemini import GeminiEngine
 from claimlens.tests.data import ClaimlensTestDataMixin
 
 
@@ -13,13 +12,11 @@ class AdapterRegistryTest(TestCase):
 
     def test_all_adapters_registered(self):
         self.assertIn('openai_compatible', ADAPTER_REGISTRY)
-        self.assertIn('gemini', ADAPTER_REGISTRY)
         self.assertIn('mistral', ADAPTER_REGISTRY)
         self.assertIn('deepseek', ADAPTER_REGISTRY)
 
     def test_adapter_classes(self):
         self.assertEqual(ADAPTER_REGISTRY['openai_compatible'], OpenAICompatibleEngine)
-        self.assertEqual(ADAPTER_REGISTRY['gemini'], GeminiEngine)
         # Legacy aliases point to the same class
         self.assertIs(ADAPTER_REGISTRY['mistral'], OpenAICompatibleEngine)
         self.assertIs(ADAPTER_REGISTRY['deepseek'], OpenAICompatibleEngine)
@@ -109,7 +106,7 @@ class EngineManagerTest(TestCase):
         mock_config1.timeout_seconds = 5
 
         mock_config2 = MagicMock()
-        mock_config2.adapter = 'gemini'
+        mock_config2.adapter = 'openai_compatible'
         mock_config2.name = 'fallback'
         mock_config2.is_primary = False
         mock_config2.api_key_encrypted = b'encrypted'

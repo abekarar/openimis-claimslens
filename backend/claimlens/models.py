@@ -20,7 +20,6 @@ class DocumentType(HistoryModel):
 class EngineConfig(HistoryModel):
     class Adapter(models.TextChoices):
         OPENAI_COMPATIBLE = 'openai_compatible', _('OpenAI Compatible')
-        GEMINI = 'gemini', _('Gemini')
         MISTRAL = 'mistral', _('Mistral (legacy)')
         DEEPSEEK = 'deepseek', _('DeepSeek (legacy)')
 

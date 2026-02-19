@@ -27,7 +27,7 @@ Monorepo containing both the Django backend module and React/Redux frontend modu
 ### Models (backend/claimlens/models.py)
 5 core models:
 - **DocumentType** — code, name, extraction_template (JSON), field_definitions, classification_hints
-- **EngineConfig** — adapter (mistral/gemini/deepseek), endpoint_url, api_key_encrypted, model_name, deployment_mode, primary/fallback/active flags
+- **EngineConfig** — adapter (openai_compatible/mistral/deepseek), endpoint_url, api_key_encrypted, model_name, deployment_mode, primary/fallback/active flags
 - **Document** — original_filename, mime_type, storage_key, status, FK to DocumentType + EngineConfig
 - **ExtractionResult** — OneToOne with Document, structured_data (JSON), field_confidences, aggregate_confidence
 - **AuditLog** — action, details (JSON), FK to Document + EngineConfig
@@ -62,7 +62,7 @@ Monorepo containing both the Django backend module and React/Redux frontend modu
 ### Engine Adapter System (backend/claimlens/engine/)
 - `base.py` — Abstract base adapter
 - `manager.py` — Adapter selection with primary/fallback logic
-- `adapters/` — Mistral, Gemini, DeepSeek implementations
+- `adapters/` — OpenAI-compatible adapter (covers OpenRouter, Mistral, DeepSeek)
 
 ### Permission Codes (backend/claimlens/apps.py)
 159001–159008 covering: query documents, extraction results, upload, process, query/manage document types, query/manage engine configs

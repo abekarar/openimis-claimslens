@@ -13,7 +13,7 @@ frontend/    # openIMIS frontend module (React) — openimis-fe-claimlens_js
 
 Django module providing:
 - Document upload, classification, and data extraction via Celery pipeline
-- Multi-engine LLM support (Gemini, Mistral, DeepSeek)
+- Multi-engine LLM support via OpenAI-compatible API (OpenRouter, Mistral, DeepSeek)
 - MinIO-based document storage
 - GraphQL API (queries + mutations)
 

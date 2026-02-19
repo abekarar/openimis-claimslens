@@ -49,9 +49,9 @@ class EngineConfigModelTest(TestCase, ClaimlensTestDataMixin):
     def test_engine_config_choices(self):
         choices = dict(EngineConfig.Adapter.choices)
         self.assertIn('openai_compatible', choices)
-        self.assertIn('gemini', choices)
         self.assertIn('mistral', choices)
         self.assertIn('deepseek', choices)
+        self.assertNotIn('gemini', choices)
 
 
 class DocumentModelTest(TestCase, ClaimlensTestDataMixin):
