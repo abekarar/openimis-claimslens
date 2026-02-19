@@ -166,8 +166,21 @@ def extract_document(self, doc_uuid, user_id):
             return str(doc_uuid)
 
         fields = result.data.get('fields', {})
-        field_confidences = {k: v.get('confidence', 0.0) for k, v in fields.items()}
-        structured_data = {k: v.get('value') for k, v in fields.items()}
+        field_confidences = {}
+        structured_data = {}
+        for k, v in fields.items():
+            field_confidences[k] = v.get('confidence', 0.0)
+            value = v.get('value')
+            if isinstance(value, list):
+                cleaned = []
+                for item in value:
+                    if isinstance(item, dict):
+                        cleaned.append({ik: iv for ik, iv in item.items() if ik != 'confidence'})
+                    else:
+                        cleaned.append(item)
+                structured_data[k] = cleaned
+            else:
+                structured_data[k] = value
         aggregate_confidence = result.data.get('aggregate_confidence', result.confidence)
 
         extraction = ExtractionResult(

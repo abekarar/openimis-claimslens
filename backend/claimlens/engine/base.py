@@ -72,13 +72,30 @@ class BaseLLMEngine(ABC):
 
     def _build_extraction_prompt(self, extraction_template):
         fields_text = json.dumps(extraction_template, indent=2)
+
+        array_fields = [
+            k for k, v in extraction_template.items()
+            if isinstance(v, dict) and v.get('type') == 'array'
+        ]
+
+        array_instructions = ""
+        if array_fields:
+            array_instructions = (
+                "\nFor array fields (those with type \"array\" in the template), "
+                "extract ALL matching items from the document as a JSON array. "
+                "Each element should be an object matching the \"items\" schema. "
+                "The \"value\" must be a JSON array of objects, and \"confidence\" "
+                "should reflect overall confidence for the array extraction.\n"
+            )
+
         return (
             "You are a document data extraction system. Extract structured data from the "
             "provided document image according to this template:\n\n"
             f"{fields_text}\n\n"
             "For each field, provide:\n"
-            '- The extracted value\n'
-            '- A confidence score between 0 and 1\n\n'
+            "- The extracted value\n"
+            "- A confidence score between 0 and 1\n"
+            f"{array_instructions}\n"
             "Respond with a JSON object containing:\n"
             '- "fields": object mapping field names to {"value": ..., "confidence": float}\n'
             '- "aggregate_confidence": overall extraction confidence (float 0-1)\n\n'

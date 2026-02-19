@@ -77,8 +77,29 @@ class DocumentService(BaseService):
                     details={'from': Document.Status.PENDING, 'to': Document.Status.PREPROCESSING},
                 ).save(user=self.user)
 
-                from claimlens.tasks import run_processing_pipeline
-                result = run_processing_pipeline.delay(str(doc.id), str(self.user.id))
+                from celery import chain as celery_chain
+                from kombu import Connection
+                from claimlens.tasks import preprocess_document, classify_document, extract_document
+
+                doc_id = str(doc.id)
+                user_id = str(self.user.id)
+                pipeline = celery_chain(
+                    preprocess_document.signature(
+                        args=(doc_id, user_id), queue='claimlens.preprocessing'
+                    ),
+                    classify_document.signature(
+                        args=(user_id,), queue='claimlens.classification'
+                    ),
+                    extract_document.signature(
+                        args=(user_id,), queue='claimlens.extraction'
+                    ),
+                )
+                broker_url = ClaimlensConfig.celery_broker_url
+                if broker_url:
+                    with Connection(broker_url) as conn:
+                        result = pipeline.apply_async(connection=conn)
+                else:
+                    result = pipeline.apply_async()
                 doc.celery_task_id = result.id
                 doc.save(user=self.user)
 
