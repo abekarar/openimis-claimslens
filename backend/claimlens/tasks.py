@@ -204,7 +204,7 @@ def extract_document(self, doc_uuid, user_id):
         else:
             final_status = Document.Status.FAILED
 
-        if routed_config:
+        if routed_config and routed_config != doc.engine_config:
             doc.engine_config = routed_config
             doc.save(user=user)
 
