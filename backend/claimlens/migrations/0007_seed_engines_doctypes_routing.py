@@ -359,12 +359,16 @@ def seed_engine_configs(apps, schema_editor):
                     model_name, deployment_mode, is_primary, is_fallback, is_active,
                     max_tokens, temperature, timeout_seconds,
                     "UserCreatedUUID", "UserUpdatedUUID")
-                   VALUES (%s, FALSE, '{}', NOW(), NOW(),
+                   SELECT %s, FALSE, '{}', NOW(), NOW(),
                     1, %s, %s, %s, %s,
                     %s, %s, %s, %s, TRUE,
                     4096, 0.1, 120,
                     (SELECT id FROM "core_User" LIMIT 1),
-                    (SELECT id FROM "core_User" LIMIT 1))''',
+                    (SELECT id FROM "core_User" LIMIT 1)
+                   WHERE NOT EXISTS (
+                       SELECT 1 FROM claimlens_engineconfig
+                       WHERE name = %s AND "isDeleted" = FALSE
+                   )''',
                 [
                     eng['uuid'],
                     eng['name'],
@@ -375,6 +379,7 @@ def seed_engine_configs(apps, schema_editor):
                     'cloud',
                     eng['is_primary'],
                     eng['is_fallback'],
+                    eng['name'],
                 ],
             )
 
@@ -395,7 +400,13 @@ def seed_document_types(apps, schema_editor):
                     1, %s, %s, %s, '{}',
                     %s, TRUE,
                     (SELECT id FROM "core_User" LIMIT 1),
-                    (SELECT id FROM "core_User" LIMIT 1))''',
+                    (SELECT id FROM "core_User" LIMIT 1))
+                   ON CONFLICT (code) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    extraction_template = EXCLUDED.extraction_template,
+                    classification_hints = EXCLUDED.classification_hints,
+                    is_active = TRUE,
+                    "DateUpdated" = NOW()''',
                 [
                     str(uuid.uuid4()),
                     dt['code'],
@@ -419,13 +430,20 @@ def seed_capability_scores(apps, schema_editor):
                         version, language, accuracy_score, cost_per_page, speed_score,
                         is_active, document_type_id, engine_config_id,
                         "UserCreatedUUID", "UserUpdatedUUID")
-                       VALUES (%s, FALSE, '{}', NOW(), NOW(),
+                       SELECT %s, FALSE, '{}', NOW(), NOW(),
                         1, %s, %s, %s, %s,
                         TRUE, NULL,
                         (SELECT "UUID" FROM claimlens_engineconfig
                          WHERE name = %s AND "isDeleted" = FALSE LIMIT 1),
                         (SELECT id FROM "core_User" LIMIT 1),
-                        (SELECT id FROM "core_User" LIMIT 1))''',
+                        (SELECT id FROM "core_User" LIMIT 1)
+                       WHERE NOT EXISTS (
+                           SELECT 1 FROM claimlens_enginecapabilityscore
+                           WHERE engine_config_id = (
+                               SELECT "UUID" FROM claimlens_engineconfig
+                               WHERE name = %s AND "isDeleted" = FALSE LIMIT 1
+                           ) AND language = %s AND document_type_id IS NULL
+                       )''',
                     [
                         str(uuid.uuid4()),
                         lang,
@@ -433,6 +451,8 @@ def seed_capability_scores(apps, schema_editor):
                         cost,
                         speed,
                         engine_name,
+                        engine_name,
+                        lang,
                     ],
                 )
 
@@ -460,13 +480,17 @@ def seed_routing_rules(apps, schema_editor):
                     version, name, language, min_confidence, priority, is_active,
                     document_type_id, engine_config_id,
                     "UserCreatedUUID", "UserUpdatedUUID")
-                   VALUES (%s, FALSE, '{{}}'::jsonb, NOW(), NOW(),
+                   SELECT %s, FALSE, '{{}}'::jsonb, NOW(), NOW(),
                     1, %s, %s, 0.0, %s, TRUE,
                     {dt_subquery},
                     (SELECT "UUID" FROM claimlens_engineconfig
                      WHERE name = %s AND "isDeleted" = FALSE LIMIT 1),
                     (SELECT id FROM "core_User" LIMIT 1),
-                    (SELECT id FROM "core_User" LIMIT 1))''',
+                    (SELECT id FROM "core_User" LIMIT 1)
+                   WHERE NOT EXISTS (
+                       SELECT 1 FROM claimlens_engineroutingrule
+                       WHERE name = %s AND "isDeleted" = FALSE
+                   )''',
                 [
                     str(uuid.uuid4()),
                     name,
@@ -474,6 +498,7 @@ def seed_routing_rules(apps, schema_editor):
                     priority,
                     *dt_params,
                     engine_name,
+                    name,
                 ],
             )
 
