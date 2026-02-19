@@ -5,7 +5,7 @@ from claimlens.apps import ClaimlensConfig
 from claimlens.models import (
     Document, DocumentType, EngineConfig,
     EngineCapabilityScore, ValidationRule, RegistryUpdateProposal,
-    EngineRoutingRule,
+    EngineRoutingRule, PromptTemplate,
 )
 
 
@@ -156,3 +156,19 @@ class EngineRoutingRuleValidation(BaseModelValidation):
     def validate_update(cls, user, **data):
         super().validate_update(user, **data)
         cls.validate_create(user, **data)
+
+
+class PromptTemplateValidation:
+
+    @classmethod
+    def validate_save(cls, user, **data):
+        content = data.get('content')
+        if not content or not content.strip():
+            raise ValidationError("Prompt content cannot be empty")
+
+        prompt_type = data.get('prompt_type')
+        valid_types = [c[0] for c in PromptTemplate.PromptType.choices]
+        if prompt_type not in valid_types:
+            raise ValidationError(
+                f"Invalid prompt_type: {prompt_type}. Valid: {', '.join(valid_types)}"
+            )

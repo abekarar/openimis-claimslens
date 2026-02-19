@@ -7,8 +7,15 @@ import {
   Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle,
   FormControlLabel, TextField,
 } from "@material-ui/core";
+import {
+  Accordion, AccordionDetails, AccordionSummary,
+} from "@material-ui/core";
+import { ExpandMore } from "@material-ui/icons";
 import { withModulesManager, formatMessage } from "@openimis/fe-core";
-import { createDocumentType, updateDocumentType } from "../actions";
+import {
+  createDocumentType, updateDocumentType,
+  fetchPromptTemplates, savePromptVersion, deletePromptOverride,
+} from "../actions";
 import JsonEditor from "./JsonEditor";
 
 const styles = (theme) => ({
@@ -33,11 +40,38 @@ class DocumentTypeForm extends Component {
       : "",
     isActive: dt ? !!dt.isActive : true,
     jsonError: null,
+    useClassificationOverride: false,
+    classificationOverride: "",
+    useExtractionOverride: false,
+    extractionOverride: "",
   });
 
   componentDidUpdate(prevProps) {
     if (this.props.open && !prevProps.open) {
       this.setState(this.initialState(this.props.documentType));
+      // Fetch existing prompt overrides for this doc type
+      if (this.props.documentType && this.props.documentType.uuid) {
+        this.props.fetchPromptTemplates(
+          this.props.modulesManager,
+          [`isActive: true`, `documentTypeId: "${this.props.documentType.uuid}"`]
+        );
+      }
+    }
+    // Populate override state from fetched templates
+    if (this.props.promptTemplates !== prevProps.promptTemplates && this.props.documentType) {
+      const dtId = this.props.documentType.uuid;
+      const classification = this.props.promptTemplates.find(
+        (t) => t.promptType === "classification" && t.documentType && t.documentType.uuid === dtId
+      );
+      const extraction = this.props.promptTemplates.find(
+        (t) => t.promptType === "extraction" && t.documentType && t.documentType.uuid === dtId
+      );
+      if (classification) {
+        this.setState({ useClassificationOverride: true, classificationOverride: classification.content });
+      }
+      if (extraction) {
+        this.setState({ useExtractionOverride: true, extractionOverride: extraction.content });
+      }
     }
   }
 
@@ -70,6 +104,31 @@ class DocumentTypeForm extends Component {
         data,
         formatMessage(intl, "claimlens", "documentType.mutation.update")
       );
+
+      // Handle prompt overrides
+      const { useClassificationOverride, classificationOverride, useExtractionOverride, extractionOverride } = this.state;
+      if (useClassificationOverride && classificationOverride.trim()) {
+        this.props.savePromptVersion(
+          { promptType: "classification", content: classificationOverride, changeSummary: "Override update", documentTypeId: documentType.uuid },
+          formatMessage(intl, "claimlens", "documentType.promptOverrides.mutation.save")
+        );
+      } else if (!useClassificationOverride) {
+        this.props.deletePromptOverride(
+          "classification", documentType.uuid,
+          formatMessage(intl, "claimlens", "documentType.promptOverrides.mutation.delete")
+        );
+      }
+      if (useExtractionOverride && extractionOverride.trim()) {
+        this.props.savePromptVersion(
+          { promptType: "extraction", content: extractionOverride, changeSummary: "Override update", documentTypeId: documentType.uuid },
+          formatMessage(intl, "claimlens", "documentType.promptOverrides.mutation.save")
+        );
+      } else if (!useExtractionOverride) {
+        this.props.deletePromptOverride(
+          "extraction", documentType.uuid,
+          formatMessage(intl, "claimlens", "documentType.promptOverrides.mutation.delete")
+        );
+      }
     } else {
       this.props.createDocumentType(
         data,
@@ -139,6 +198,63 @@ class DocumentTypeForm extends Component {
             }
             label={formatMessage(intl, "claimlens", "documentType.active")}
           />
+
+          {isEdit && (
+            <Accordion style={{ marginTop: 16 }}>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography>
+                  {formatMessage(intl, "claimlens", "documentType.promptOverrides.title")}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails style={{ display: "block" }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={this.state.useClassificationOverride}
+                      onChange={(e) => this.setState({ useClassificationOverride: e.target.checked })}
+                      color="primary"
+                    />
+                  }
+                  label={formatMessage(intl, "claimlens", "documentType.promptOverrides.useCustomClassification")}
+                />
+                {this.state.useClassificationOverride && (
+                  <TextField
+                    className={classes.field}
+                    fullWidth
+                    multiline
+                    rows={6}
+                    variant="outlined"
+                    placeholder={formatMessage(intl, "claimlens", "documentType.promptOverrides.usingGlobal")}
+                    value={this.state.classificationOverride}
+                    onChange={this.handleChange("classificationOverride")}
+                  />
+                )}
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={this.state.useExtractionOverride}
+                      onChange={(e) => this.setState({ useExtractionOverride: e.target.checked })}
+                      color="primary"
+                    />
+                  }
+                  label={formatMessage(intl, "claimlens", "documentType.promptOverrides.useCustomExtraction")}
+                />
+                {this.state.useExtractionOverride && (
+                  <TextField
+                    className={classes.field}
+                    fullWidth
+                    multiline
+                    rows={6}
+                    variant="outlined"
+                    placeholder={formatMessage(intl, "claimlens", "documentType.promptOverrides.usingGlobal")}
+                    value={this.state.extractionOverride}
+                    onChange={this.handleChange("extractionOverride")}
+                  />
+                )}
+              </AccordionDetails>
+            </Accordion>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => onClose(false)}>
@@ -160,10 +276,14 @@ class DocumentTypeForm extends Component {
 
 const mapStateToProps = (state) => ({
   submittingMutation: state.claimlens.submittingMutation,
+  promptTemplates: state.claimlens.promptTemplates,
 });
 
 const mapDispatchToProps = (dispatch) =>
-  bindActionCreators({ createDocumentType, updateDocumentType }, dispatch);
+  bindActionCreators({
+    createDocumentType, updateDocumentType,
+    fetchPromptTemplates, savePromptVersion, deletePromptOverride,
+  }, dispatch);
 
 export default withModulesManager(
   connect(mapStateToProps, mapDispatchToProps)(injectIntl(withStyles(styles)(DocumentTypeForm)))

@@ -13,7 +13,7 @@ from claimlens.gql_queries import (
     EngineCapabilityScoreGQLType, RoutingPolicyGQLType,
     ValidationResultGQLType, ValidationRuleGQLType,
     ValidationFindingGQLType, RegistryUpdateProposalGQLType,
-    EngineRoutingRuleGQLType,
+    EngineRoutingRuleGQLType, PromptTemplateGQLType,
 )
 from claimlens.gql_mutations import (
     ProcessDocumentMutation, CreateDocumentTypeMutation,
@@ -27,11 +27,14 @@ from claimlens.gql_mutations import (
     ResolveValidationFindingMutation,
     UpdateModuleConfigMutation, LinkDocumentToClaimMutation,
     CreateEngineRoutingRuleMutation, UpdateEngineRoutingRuleMutation,
+    SavePromptVersionMutation, ActivatePromptVersionMutation,
+    DeletePromptOverrideMutation,
 )
 from claimlens.models import (
     Document, DocumentType, EngineConfig, ExtractionResult, AuditLog,
     EngineCapabilityScore, RoutingPolicy, ValidationResult, ValidationRule,
     ValidationFinding, RegistryUpdateProposal, EngineRoutingRule,
+    PromptTemplate,
 )
 
 
@@ -98,6 +101,16 @@ class Query(graphene.ObjectType):
     claimlens_engine_routing_rules = OrderedDjangoFilterConnectionField(
         EngineRoutingRuleGQLType,
         orderBy=graphene.List(of_type=graphene.String),
+    )
+    claimlens_prompt_templates = OrderedDjangoFilterConnectionField(
+        PromptTemplateGQLType,
+        orderBy=graphene.List(of_type=graphene.String),
+        prompt_type=graphene.String(),
+        document_type_id=graphene.UUID(),
+    )
+    claimlens_prompt_template = graphene.Field(
+        PromptTemplateGQLType,
+        uuid=graphene.UUID(required=True),
     )
 
     # --- Existing resolvers ---
@@ -196,6 +209,27 @@ class Query(graphene.ObjectType):
         query = EngineRoutingRule.objects.filter(is_deleted=False)
         return gql_optimizer.query(query, info)
 
+    def resolve_claimlens_prompt_templates(self, info, **kwargs):
+        _check_permissions(info.context.user, ClaimlensConfig.gql_query_prompt_templates_perms)
+        filters = [Q(is_deleted=False)]
+        prompt_type = kwargs.get('prompt_type')
+        if prompt_type:
+            filters.append(Q(prompt_type=prompt_type))
+        document_type_id = kwargs.get('document_type_id')
+        if document_type_id:
+            filters.append(Q(document_type__id=document_type_id))
+        else:
+            # If no document_type_id filter, default to globals only
+            # (unless explicitly filtered via graphene-django filter_fields)
+            pass
+        query = PromptTemplate.objects.filter(*filters)
+        return gql_optimizer.query(query, info)
+
+    def resolve_claimlens_prompt_template(self, info, **kwargs):
+        _check_permissions(info.context.user, ClaimlensConfig.gql_query_prompt_templates_perms)
+        uuid = kwargs.get('uuid')
+        return PromptTemplate.objects.filter(id=uuid, is_deleted=False).first()
+
 
 class Mutation(graphene.ObjectType):
     process_claimlens_document = ProcessDocumentMutation.Field()
@@ -216,6 +250,9 @@ class Mutation(graphene.ObjectType):
     link_claimlens_document_to_claim = LinkDocumentToClaimMutation.Field()
     create_claimlens_engine_routing_rule = CreateEngineRoutingRuleMutation.Field()
     update_claimlens_engine_routing_rule = UpdateEngineRoutingRuleMutation.Field()
+    save_claimlens_prompt_version = SavePromptVersionMutation.Field()
+    activate_claimlens_prompt_version = ActivatePromptVersionMutation.Field()
+    delete_claimlens_prompt_override = DeletePromptOverrideMutation.Field()
 
 
 def _check_permissions(user, perms):

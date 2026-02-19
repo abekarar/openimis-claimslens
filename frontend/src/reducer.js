@@ -97,6 +97,20 @@ const initialState = {
   engineRoutingRules: [],
   engineRoutingRulesPageInfo: { totalCount: 0 },
 
+  // Prompt templates
+  fetchingPromptTemplates: false,
+  fetchedPromptTemplates: false,
+  errorPromptTemplates: null,
+  promptTemplates: [],
+  promptTemplatesPageInfo: { totalCount: 0 },
+
+  // Prompt version history
+  fetchingPromptVersionHistory: false,
+  fetchedPromptVersionHistory: false,
+  errorPromptVersionHistory: null,
+  promptVersionHistory: [],
+  promptVersionHistoryPageInfo: { totalCount: 0 },
+
   submittingMutation: false,
   mutation: {},
 };
@@ -388,6 +402,36 @@ function reducer(state = initialState, action) {
     case "CLAIMLENS_DASHBOARD_COUNT_REVIEW_RESP":
       return { ...state, dashboardReviewCount: pageInfo(action.payload.data.claimlensDocuments).totalCount };
 
+    // Prompt templates
+    case "CLAIMLENS_PROMPT_TEMPLATES_REQ":
+      return { ...state, fetchingPromptTemplates: true, fetchedPromptTemplates: false, promptTemplates: [], errorPromptTemplates: null };
+    case "CLAIMLENS_PROMPT_TEMPLATES_RESP":
+      return {
+        ...state,
+        fetchingPromptTemplates: false,
+        fetchedPromptTemplates: true,
+        promptTemplates: parseData(action.payload.data.claimlensPromptTemplates),
+        promptTemplatesPageInfo: pageInfo(action.payload.data.claimlensPromptTemplates),
+        errorPromptTemplates: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_PROMPT_TEMPLATES_ERR":
+      return { ...state, fetchingPromptTemplates: false, errorPromptTemplates: formatServerError(action.payload) };
+
+    // Prompt version history
+    case "CLAIMLENS_PROMPT_VERSION_HISTORY_REQ":
+      return { ...state, fetchingPromptVersionHistory: true, fetchedPromptVersionHistory: false, promptVersionHistory: [], errorPromptVersionHistory: null };
+    case "CLAIMLENS_PROMPT_VERSION_HISTORY_RESP":
+      return {
+        ...state,
+        fetchingPromptVersionHistory: false,
+        fetchedPromptVersionHistory: true,
+        promptVersionHistory: parseData(action.payload.data.claimlensPromptTemplates),
+        promptVersionHistoryPageInfo: pageInfo(action.payload.data.claimlensPromptTemplates),
+        errorPromptVersionHistory: formatGraphQLError(action.payload),
+      };
+    case "CLAIMLENS_PROMPT_VERSION_HISTORY_ERR":
+      return { ...state, fetchingPromptVersionHistory: false, errorPromptVersionHistory: formatServerError(action.payload) };
+
     // Mutations
     case "CLAIMLENS_MUTATION_REQ":
       return dispatchMutationReq(state, action);
@@ -429,6 +473,12 @@ function reducer(state = initialState, action) {
       return dispatchMutationResp(state, "createClaimlensEngineRoutingRule", action);
     case "CLAIMLENS_UPDATE_ENGINE_ROUTING_RULE_RESP":
       return dispatchMutationResp(state, "updateClaimlensEngineRoutingRule", action);
+    case "CLAIMLENS_SAVE_PROMPT_VERSION_RESP":
+      return dispatchMutationResp(state, "saveClaimlensPromptVersion", action);
+    case "CLAIMLENS_ACTIVATE_PROMPT_VERSION_RESP":
+      return dispatchMutationResp(state, "activateClaimlensPromptVersion", action);
+    case "CLAIMLENS_DELETE_PROMPT_OVERRIDE_RESP":
+      return dispatchMutationResp(state, "deleteClaimlensPromptOverride", action);
 
     default:
       return state;

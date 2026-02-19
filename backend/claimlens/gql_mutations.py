@@ -15,6 +15,7 @@ from claimlens.services import (
     EngineCapabilityScoreService, RoutingPolicyService,
     ValidationRuleService, RegistryUpdateProposalService,
     ModuleConfigService, EngineRoutingRuleService,
+    PromptTemplateService,
 )
 
 
@@ -129,6 +130,22 @@ class CreateEngineRoutingRuleInput(OpenIMISMutation.Input):
 
 class UpdateEngineRoutingRuleInput(CreateEngineRoutingRuleInput):
     id = graphene.UUID(required=True)
+
+
+class SavePromptVersionInput(OpenIMISMutation.Input):
+    prompt_type = graphene.String(required=True)
+    content = graphene.String(required=True)
+    change_summary = graphene.String(required=True)
+    document_type_id = graphene.UUID(required=False)
+
+
+class ActivatePromptVersionInput(OpenIMISMutation.Input):
+    id = graphene.UUID(required=True)
+
+
+class DeletePromptOverrideInput(OpenIMISMutation.Input):
+    prompt_type = graphene.String(required=True)
+    document_type_id = graphene.UUID(required=True)
 
 
 # --- Existing mutations ---
@@ -647,6 +664,94 @@ class UpdateEngineRoutingRuleMutation(OpenIMISMutation):
             result = service.update(data)
             if not result.get('success'):
                 return [{"message": result.get('detail', 'Update failed')}]
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+# --- Prompt template mutations ---
+
+class SavePromptVersionMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "SavePromptVersionMutation"
+
+    class Input(SavePromptVersionInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_manage_prompt_templates_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            service = PromptTemplateService(user)
+            result = service.save_version(
+                prompt_type=data['prompt_type'],
+                content=data['content'],
+                change_summary=data['change_summary'],
+                document_type_id=data.get('document_type_id'),
+            )
+            if not result.get('success'):
+                return [{"message": result.get('detail', 'Save failed')}]
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class ActivatePromptVersionMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "ActivatePromptVersionMutation"
+
+    class Input(ActivatePromptVersionInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_manage_prompt_templates_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            service = PromptTemplateService(user)
+            result = service.activate_version(data['id'])
+            if not result.get('success'):
+                return [{"message": result.get('detail', 'Activate failed')}]
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class DeletePromptOverrideMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "DeletePromptOverrideMutation"
+
+    class Input(DeletePromptOverrideInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_manage_prompt_templates_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            service = PromptTemplateService(user)
+            result = service.delete_override(data['prompt_type'], data['document_type_id'])
+            if not result.get('success'):
+                return [{"message": result.get('detail', 'Delete failed')}]
             return None
         except Exception as exc:
             return [{"message": str(exc)}]

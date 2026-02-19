@@ -7,6 +7,7 @@ from claimlens.models import (
     Document, DocumentType, EngineConfig, ExtractionResult, AuditLog,
     EngineCapabilityScore, RoutingPolicy, ValidationResult, ValidationRule,
     ValidationFinding, RegistryUpdateProposal, EngineRoutingRule,
+    PromptTemplate,
 )
 
 
@@ -222,6 +223,22 @@ class EngineRoutingRuleGQLType(DjangoObjectType):
             "language": ["exact"],
             "priority": ["exact", "lt", "lte", "gt", "gte"],
             "is_active": ["exact"],
+            "is_deleted": ["exact"],
+        }
+        connection_class = ExtendedConnection
+
+
+class PromptTemplateGQLType(DjangoObjectType):
+    uuid = graphene.String(source='uuid')
+
+    class Meta:
+        model = PromptTemplate
+        interfaces = (graphene.relay.Node,)
+        filter_fields = {
+            "id": ["exact"],
+            "prompt_type": ["exact"],
+            "is_active": ["exact"],
+            "version": ["exact", "lt", "lte", "gt", "gte"],
             "is_deleted": ["exact"],
         }
         connection_class = ExtendedConnection

@@ -76,7 +76,10 @@ def classify_document(self, doc_uuid, user_id):
             return str(doc_uuid)
 
         manager = EngineManager()
-        result, routed_config = manager.classify_routed(file_bytes, doc.mime_type, doc_types)
+        result, routed_config = manager.classify_routed(
+            file_bytes, doc.mime_type, doc_types,
+            document_type_code=doc.document_type.code if doc.document_type else None,
+        )
 
         if result.success:
             code = result.data.get('document_type_code')
@@ -150,10 +153,12 @@ def extract_document(self, doc_uuid, user_id):
         if doc.document_type and doc.document_type.extraction_template:
             extraction_template = doc.document_type.extraction_template
 
+        doc_type_code = doc.document_type.code if doc.document_type else None
         manager = EngineManager()
         result, routed_config = manager.extract_routed(
             file_bytes, doc.mime_type, extraction_template,
             language=doc.language, document_type=doc.document_type,
+            document_type_code=doc_type_code,
         )
 
         if not result.success:

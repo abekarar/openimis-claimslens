@@ -21,6 +21,36 @@ def _load_prompt(filename):
     with open(path, 'r') as f:
         return f.read()
 
+
+def _resolve_prompt(prompt_type, document_type_code=None):
+    """
+    Resolution order:
+    1. Active per-DocType override (if document_type_code provided)
+    2. Active global prompt (document_type=null)
+    3. File-based fallback (existing .md files)
+    """
+    from claimlens.models import PromptTemplate
+
+    if document_type_code:
+        override = PromptTemplate.objects.filter(
+            prompt_type=prompt_type,
+            document_type__code=document_type_code,
+            is_active=True, is_deleted=False,
+        ).first()
+        if override:
+            return override.content
+
+    global_prompt = PromptTemplate.objects.filter(
+        prompt_type=prompt_type,
+        document_type__isnull=True,
+        is_active=True, is_deleted=False,
+    ).first()
+    if global_prompt:
+        return global_prompt.content
+
+    # Fallback to file
+    return _load_prompt(f'{prompt_type}.md')
+
 ADAPTER_REGISTRY = {}
 
 
@@ -43,11 +73,11 @@ class BaseLLMEngine(ABC):
         self.timeout = config.get('timeout_seconds', 120)
 
     @abstractmethod
-    def classify(self, image_bytes, mime_type, document_types):
+    def classify(self, image_bytes, mime_type, document_types, document_type_code=None):
         pass
 
     @abstractmethod
-    def extract(self, image_bytes, mime_type, extraction_template):
+    def extract(self, image_bytes, mime_type, extraction_template, document_type_code=None):
         pass
 
     def health_check(self):
@@ -74,17 +104,17 @@ class BaseLLMEngine(ABC):
         doc.close()
         return png_bytes, "image/png"
 
-    def _build_classification_prompt(self, document_types):
+    def _build_classification_prompt(self, document_types, document_type_code=None):
         type_descriptions = []
         for dt in document_types:
             hints = f" (hints: {dt['classification_hints']})" if dt.get('classification_hints') else ""
             type_descriptions.append(f"- {dt['code']}: {dt['name']}{hints}")
 
         types_text = "\n".join(type_descriptions)
-        template = _load_prompt('classification.md')
+        template = _resolve_prompt('classification', document_type_code)
         return template.format_map({'types_text': types_text})
 
-    def _build_extraction_prompt(self, extraction_template):
+    def _build_extraction_prompt(self, extraction_template, document_type_code=None):
         fields_text = json.dumps(extraction_template, indent=2)
 
         array_fields = [
@@ -102,7 +132,7 @@ class BaseLLMEngine(ABC):
                 "should reflect overall confidence for the array extraction.\n"
             )
 
-        template = _load_prompt('extraction.md')
+        template = _resolve_prompt('extraction', document_type_code)
         return template.format_map({
             'fields_text': fields_text,
             'array_instructions': array_instructions,

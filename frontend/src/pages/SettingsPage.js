@@ -17,6 +17,7 @@ import RoutingPolicyPanel from "../components/RoutingPolicyPanel";
 import CapabilityScoreSearcher from "../components/CapabilityScoreSearcher";
 import EngineRoutingRuleSearcher from "../components/EngineRoutingRuleSearcher";
 import ValidationRuleSearcher from "../components/ValidationRuleSearcher";
+import PromptTemplatesPanel from "../components/PromptTemplatesPanel";
 import {
   RIGHT_CLAIMLENS_MODULE_CONFIG,
   RIGHT_CLAIMLENS_DOCUMENT_TYPES,
@@ -24,6 +25,7 @@ import {
   RIGHT_CLAIMLENS_ROUTING_POLICY,
   RIGHT_CLAIMLENS_VALIDATION_RULES,
   RIGHT_CLAIMLENS_MANAGE_VALIDATION_RULES,
+  RIGHT_CLAIMLENS_PROMPT_TEMPLATES,
 } from "../constants";
 
 const styles = (theme) => ({
@@ -40,6 +42,7 @@ const TAB_DEFS = [
   { key: "engine-configs", hash: "#engine-configs", right: RIGHT_CLAIMLENS_ENGINE_CONFIGS, labelKey: "settings.tab.engineConfigs" },
   { key: "routing", hash: "#routing", right: RIGHT_CLAIMLENS_ROUTING_POLICY, labelKey: "settings.tab.routing" },
   { key: "validation-rules", hash: "#validation-rules", right: RIGHT_CLAIMLENS_VALIDATION_RULES, labelKey: "settings.tab.validationRules" },
+  { key: "prompt-templates", hash: "#prompt-templates", right: RIGHT_CLAIMLENS_PROMPT_TEMPLATES, labelKey: "settings.tab.promptTemplates" },
 ];
 
 const ALL_SETTINGS_RIGHTS = [
@@ -48,6 +51,7 @@ const ALL_SETTINGS_RIGHTS = [
   RIGHT_CLAIMLENS_ENGINE_CONFIGS,
   RIGHT_CLAIMLENS_ROUTING_POLICY,
   RIGHT_CLAIMLENS_VALIDATION_RULES,
+  RIGHT_CLAIMLENS_PROMPT_TEMPLATES,
 ];
 
 class SettingsPage extends Component {
@@ -111,6 +115,8 @@ class SettingsPage extends Component {
             <ValidationRuleSearcher />
           </Fragment>
         );
+      case "prompt-templates":
+        return <PromptTemplatesPanel />;
       default:
         return null;
     }

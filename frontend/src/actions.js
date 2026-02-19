@@ -203,6 +203,18 @@ export function fetchAuditLogs(mm, documentUuid) {
   return graphql(payload, "CLAIMLENS_AUDIT_LOGS");
 }
 
+const CLAIMLENS_PROMPT_TEMPLATE_FIELDS = [
+  "uuid",
+  "promptType",
+  "content",
+  "version",
+  "documentType{uuid,code,name}",
+  "isActive",
+  "changeSummary",
+  "dateCreated",
+  "userCreated{id,username}",
+];
+
 const CLAIMLENS_ENGINE_ROUTING_RULE_FIELDS = [
   "uuid",
   "name",
@@ -698,6 +710,76 @@ export function updateEngineRoutingRule(data, clientMutationLabel) {
   return graphql(
     mutation.payload,
     ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_UPDATE_ENGINE_ROUTING_RULE_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+// --- Prompt template queries ---
+
+export function fetchPromptTemplates(mm, filters) {
+  const payload = formatPageQueryWithCount(
+    "claimlensPromptTemplates",
+    filters,
+    CLAIMLENS_PROMPT_TEMPLATE_FIELDS
+  );
+  return graphql(payload, "CLAIMLENS_PROMPT_TEMPLATES");
+}
+
+export function fetchPromptVersionHistory(mm, promptType, documentTypeId) {
+  const filters = [`promptType: "${promptType}"`];
+  if (documentTypeId) {
+    filters.push(`documentTypeId: "${documentTypeId}"`);
+  }
+  const payload = formatPageQueryWithCount(
+    "claimlensPromptTemplates",
+    filters,
+    CLAIMLENS_PROMPT_TEMPLATE_FIELDS
+  );
+  return graphql(payload, "CLAIMLENS_PROMPT_VERSION_HISTORY");
+}
+
+// --- Prompt template mutations ---
+
+export function savePromptVersion(data, clientMutationLabel) {
+  if (data.promptType == null) throw new Error("savePromptVersion: promptType is required");
+  if (data.content == null) throw new Error("savePromptVersion: content is required");
+  if (data.changeSummary == null) throw new Error("savePromptVersion: changeSummary is required");
+  const fields = [
+    `promptType: "${data.promptType}"`,
+    `content: ${JSON.stringify(data.content)}`,
+    `changeSummary: ${JSON.stringify(data.changeSummary)}`,
+  ];
+  if (data.documentTypeId) fields.push(`documentTypeId: "${data.documentTypeId}"`);
+
+  const mutation = formatMutation("saveClaimlensPromptVersion", fields.join(", "), clientMutationLabel);
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_SAVE_PROMPT_VERSION_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+export function activatePromptVersion(id, clientMutationLabel) {
+  if (id == null) throw new Error("activatePromptVersion: id is required");
+  const mutation = formatMutation("activateClaimlensPromptVersion", `id: "${id}"`, clientMutationLabel);
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_ACTIVATE_PROMPT_VERSION_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+export function deletePromptOverride(promptType, documentTypeId, clientMutationLabel) {
+  if (promptType == null) throw new Error("deletePromptOverride: promptType is required");
+  if (documentTypeId == null) throw new Error("deletePromptOverride: documentTypeId is required");
+  const mutation = formatMutation(
+    "deleteClaimlensPromptOverride",
+    `promptType: "${promptType}", documentTypeId: "${documentTypeId}"`,
+    clientMutationLabel
+  );
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_DELETE_PROMPT_OVERRIDE_RESP", "CLAIMLENS_MUTATION_ERR"],
     { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
   );
 }
