@@ -626,7 +626,7 @@ export function resolveValidationFinding(id, resolutionStatus, clientMutationLab
 
 export function fetchDocumentCount(mm, statusFilter, actionType) {
   const filters = [`first: 0`];
-  if (statusFilter) filters.push(`status: "${statusFilter}"`);
+  if (statusFilter) filters.push(`status: ${statusFilter.toUpperCase()}`);
   const payload = formatPageQueryWithCount("claimlensDocuments", filters, ["uuid"]);
   return graphql(payload, actionType);
 }
@@ -693,6 +693,19 @@ export function createEngineRoutingRule(data, clientMutationLabel) {
     ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_CREATE_ENGINE_ROUTING_RULE_RESP", "CLAIMLENS_MUTATION_ERR"],
     { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
   );
+}
+
+export function fetchClaimsForPicker(mm, filters) {
+  const payload = formatPageQueryWithCount(
+    "claims",
+    filters,
+    [
+      "uuid", "code", "dateClaimed", "status",
+      "insuree{id,uuid,chfId,lastName,otherNames}",
+      "healthFacility{id,uuid,code,name}",
+    ]
+  );
+  return graphql(payload, "CLAIMLENS_CLAIMS_PICKER");
 }
 
 export function updateEngineRoutingRule(data, clientMutationLabel) {

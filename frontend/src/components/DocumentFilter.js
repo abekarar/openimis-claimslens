@@ -35,7 +35,7 @@ class DocumentFilter extends Component {
       {
         id: k,
         value: v,
-        filter: v ? `status: "${v}"` : null,
+        filter: v ? `status: ${v.toUpperCase()}` : null,
       },
     ]);
   };

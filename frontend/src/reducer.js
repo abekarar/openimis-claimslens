@@ -90,6 +90,10 @@ const initialState = {
   dashboardFailedCount: null,
   dashboardReviewCount: null,
 
+  // Claims picker
+  fetchingClaimsForPicker: false,
+  claimsForPicker: [],
+
   // Engine routing rules
   fetchingEngineRoutingRules: false,
   fetchedEngineRoutingRules: false,
@@ -393,6 +397,18 @@ function reducer(state = initialState, action) {
       };
     case "CLAIMLENS_ENGINE_ROUTING_RULES_ERR":
       return { ...state, fetchingEngineRoutingRules: false, errorEngineRoutingRules: formatServerError(action.payload) };
+
+    // Claims picker
+    case "CLAIMLENS_CLAIMS_PICKER_REQ":
+      return { ...state, fetchingClaimsForPicker: true, claimsForPicker: [] };
+    case "CLAIMLENS_CLAIMS_PICKER_RESP":
+      return {
+        ...state,
+        fetchingClaimsForPicker: false,
+        claimsForPicker: parseData(action.payload.data.claims),
+      };
+    case "CLAIMLENS_CLAIMS_PICKER_ERR":
+      return { ...state, fetchingClaimsForPicker: false };
 
     // Dashboard counts
     case "CLAIMLENS_DASHBOARD_COUNT_COMPLETED_RESP":

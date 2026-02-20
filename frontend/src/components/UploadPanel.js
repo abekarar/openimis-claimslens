@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 import { withStyles } from "@material-ui/core/styles";
 import {
-  Paper, Typography, Button, LinearProgress, Box, TextField, IconButton,
+  Paper, Typography, Button, LinearProgress, Box,
 } from "@material-ui/core";
 import { CloudUpload, CheckCircle, Error as ErrorIcon, Delete, Refresh } from "@material-ui/icons";
 import {
@@ -15,6 +15,8 @@ import {
 } from "@openimis/fe-core";
 import { uploadDocument } from "../actions";
 import DocumentPreviewPanel from "./DocumentPreviewPanel";
+import LanguagePicker from "../pickers/LanguagePicker";
+import ClaimPicker from "../pickers/ClaimPicker";
 import {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE_BYTES,
@@ -250,21 +252,15 @@ class UploadPanel extends Component {
           </>
         )}
 
-        <TextField
-          label={formatMessage(intl, "claimlens", "upload.language")}
-          placeholder="e.g. en, fr, sw"
-          value={language}
-          onChange={(e) => this.setState({ language: e.target.value })}
-          fullWidth
-          margin="normal"
+        <LanguagePicker
+          value={language || null}
+          onChange={(v) => this.setState({ language: v || "" })}
+          withNull={true}
         />
-        <TextField
-          label={formatMessage(intl, "claimlens", "upload.claimUuid")}
-          placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
-          value={claimUuid}
-          onChange={(e) => this.setState({ claimUuid: e.target.value })}
-          fullWidth
-          margin="normal"
+        <ClaimPicker
+          value={claimUuid || null}
+          onChange={(v) => this.setState({ claimUuid: v || "" })}
+          withNull={true}
         />
 
         {uploading && (

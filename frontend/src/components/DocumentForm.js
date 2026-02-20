@@ -106,7 +106,7 @@ class DocumentForm extends Component {
       prevProps.document &&
       doc.status !== prevProps.document.status
     ) {
-      if (TERMINAL_STATUSES.includes(doc.status)) {
+      if (TERMINAL_STATUSES.includes(doc.status ? doc.status.toLowerCase() : doc.status)) {
         this.stopPolling();
       }
     }
@@ -122,7 +122,7 @@ class DocumentForm extends Component {
 
   startPollingIfNeeded() {
     const { document: doc } = this.props;
-    if (doc && PROCESSING_STATUSES.includes(doc.status)) {
+    if (doc && PROCESSING_STATUSES.includes(doc.status ? doc.status.toLowerCase() : doc.status)) {
       this.schedulePoll();
     }
   }
@@ -266,9 +266,10 @@ class DocumentForm extends Component {
       );
     }
 
-    const canProcess = doc.status === STATUS_PENDING;
-    const isProcessing = PROCESSING_STATUSES.includes(doc.status);
-    const canValidate = doc.status === STATUS_COMPLETED && !!doc.claimUuid;
+    const docStatus = doc.status ? doc.status.toLowerCase() : doc.status;
+    const canProcess = docStatus === STATUS_PENDING;
+    const isProcessing = PROCESSING_STATUSES.includes(docStatus);
+    const canValidate = docStatus === STATUS_COMPLETED && !!doc.claimUuid;
 
     const findings = this.gatherFindings(doc.validationResults);
     const proposals = this.gatherProposals(doc.validationResults);
@@ -386,7 +387,7 @@ class DocumentForm extends Component {
               </div>
             )}
 
-            {doc.status === STATUS_COMPLETED && !doc.claimUuid && (
+            {docStatus === STATUS_COMPLETED && !doc.claimUuid && (
               <div className={classes.actions}>
                 <Button
                   variant="outlined"
@@ -399,7 +400,7 @@ class DocumentForm extends Component {
               </div>
             )}
 
-            {doc.status === STATUS_FAILED && (
+            {docStatus === STATUS_FAILED && (
               <div className={classes.actions}>
                 <Button
                   variant="contained"

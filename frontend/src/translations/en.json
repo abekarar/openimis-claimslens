@@ -436,5 +436,8 @@
   "claimlens.documentType.promptOverrides.useCustomExtraction": "Use custom extraction prompt for this document type",
   "claimlens.documentType.promptOverrides.usingGlobal": "(Using global prompt)",
   "claimlens.documentType.promptOverrides.mutation.save": "Save Prompt Override",
-  "claimlens.documentType.promptOverrides.mutation.delete": "Remove Prompt Override"
+  "claimlens.documentType.promptOverrides.mutation.delete": "Remove Prompt Override",
+
+  "claimlens.claimPicker.label": "Link to Claim",
+  "claimlens.claimPicker.null": "None (no claim linked)"
 }

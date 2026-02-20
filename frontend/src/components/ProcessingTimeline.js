@@ -28,7 +28,7 @@ const styles = (theme) => ({
 
 class ProcessingTimeline extends Component {
   getActiveStep() {
-    const { status } = this.props;
+    const status = this.props.status ? this.props.status.toLowerCase() : this.props.status;
     if (status === STATUS_FAILED || status === STATUS_REVIEW_REQUIRED) {
       const idx = STEPS.indexOf(STATUS_EXTRACTING);
       return idx >= 0 ? idx : STEPS.length;
@@ -38,11 +38,13 @@ class ProcessingTimeline extends Component {
   }
 
   isError() {
-    return this.props.status === STATUS_FAILED;
+    const status = this.props.status ? this.props.status.toLowerCase() : this.props.status;
+    return status === STATUS_FAILED;
   }
 
   render() {
-    const { classes, intl, status } = this.props;
+    const { classes, intl } = this.props;
+    const status = this.props.status ? this.props.status.toLowerCase() : this.props.status;
     const activeStep = this.getActiveStep();
 
     return (
