@@ -61,6 +61,44 @@ def register_adapter(name):
     return decorator
 
 
+def _split_merged_objects(pairs):
+    """object_pairs_hook for json.loads that detects duplicate keys.
+
+    When an LLM merges adjacent array items into one JSON object
+    (missing ``}, {`` separator), Python sees duplicate keys.  This
+    hook splits them into separate dicts and returns a list instead.
+    """
+    seen = set()
+    current = []
+    groups = [current]
+    for key, value in pairs:
+        if key in seen:
+            current = []
+            groups.append(current)
+            seen = set()
+        seen.add(key)
+        current.append((key, value))
+    if len(groups) == 1:
+        return dict(groups[0])
+    return [dict(g) for g in groups]
+
+
+def _flatten_merged(obj):
+    """Flatten nested lists produced by _split_merged_objects."""
+    if isinstance(obj, list):
+        flat = []
+        for item in obj:
+            item = _flatten_merged(item)
+            if isinstance(item, list):
+                flat.extend(item)
+            else:
+                flat.append(item)
+        return flat
+    if isinstance(obj, dict):
+        return {k: _flatten_merged(v) for k, v in obj.items()}
+    return obj
+
+
 class BaseLLMEngine(ABC):
 
     def __init__(self, config):
@@ -146,7 +184,8 @@ class BaseLLMEngine(ABC):
             if lines and lines[-1].strip() == '```':
                 lines = lines[:-1]
             text = '\n'.join(lines)
-        return json.loads(text)
+        parsed = json.loads(text, object_pairs_hook=_split_merged_objects)
+        return _flatten_merged(parsed)
 
     def _make_request(self, url, headers, payload):
         start = time.time()
