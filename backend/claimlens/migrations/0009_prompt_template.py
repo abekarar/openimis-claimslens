@@ -81,6 +81,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Fix migration state: HistoryModel metaclass forces PK column to "UUID"
+        # but migration 0001 declared it without db_column. This state-only fix
+        # aligns the migration state with the actual DB schema so FK references
+        # in CreateModel below resolve correctly.
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterField(
+                    model_name="documenttype",
+                    name="id",
+                    field=models.UUIDField(
+                        db_column="UUID",
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+            ],
+            database_operations=[],
+        ),
         migrations.CreateModel(
             name="PromptTemplate",
             fields=[
