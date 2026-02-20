@@ -21,7 +21,8 @@ const styles = (theme) => ({
 
 class StatusBadge extends Component {
   render() {
-    const { classes, intl, status } = this.props;
+    const { classes, intl, status: rawStatus } = this.props;
+    const status = rawStatus ? rawStatus.toLowerCase() : rawStatus;
     let chipClass = classes.pending;
     if (status === STATUS_COMPLETED) chipClass = classes.completed;
     else if (status === STATUS_FAILED) chipClass = classes.failed;

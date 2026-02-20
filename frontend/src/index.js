@@ -16,6 +16,7 @@ import ValidationSeverityPicker from "./pickers/ValidationSeverityPicker";
 import FindingResolutionPicker from "./pickers/FindingResolutionPicker";
 import ProposalStatusPicker from "./pickers/ProposalStatusPicker";
 import LanguagePicker from "./pickers/LanguagePicker";
+import ClaimPicker from "./pickers/ClaimPicker";
 import RuleTypePicker from "./pickers/RuleTypePicker";
 import messages_en from "./translations/en.json";
 import reducer from "./reducer";
@@ -59,6 +60,8 @@ const DEFAULT_CONFIG = {
     { key: "claimlens.ProposalStatusPicker.projection", ref: null },
     { key: "claimlens.LanguagePicker", ref: LanguagePicker },
     { key: "claimlens.LanguagePicker.projection", ref: null },
+    { key: "claimlens.ClaimPicker", ref: ClaimPicker },
+    { key: "claimlens.ClaimPicker.projection", ref: null },
     { key: "claimlens.RuleTypePicker", ref: RuleTypePicker },
     { key: "claimlens.RuleTypePicker.projection", ref: null },
   ],
@@ -142,6 +145,7 @@ export {
   createEngineRoutingRule,
   updateEngineRoutingRule,
   fetchDocumentCount,
+  fetchClaimsForPicker,
 } from "./actions";
 
 export const ClaimLensModule = (cfg) => {

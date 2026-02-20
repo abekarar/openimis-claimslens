@@ -407,5 +407,8 @@
 
   "claimlens.action.resolveFinding": "Resolve Validation Finding",
   "claimlens.action.reviewProposal": "Review Registry Proposal",
-  "claimlens.action.applyProposal": "Apply Registry Proposal"
+  "claimlens.action.applyProposal": "Apply Registry Proposal",
+
+  "claimlens.claimPicker.label": "Link to Claim",
+  "claimlens.claimPicker.null": "None (no claim linked)"
 }
