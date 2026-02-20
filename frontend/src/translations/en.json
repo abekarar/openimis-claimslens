@@ -439,5 +439,15 @@
   "claimlens.documentType.promptOverrides.mutation.delete": "Remove Prompt Override",
 
   "claimlens.claimPicker.label": "Link to Claim",
-  "claimlens.claimPicker.null": "None (no claim linked)"
+  "claimlens.claimPicker.null": "None (no claim linked)",
+
+  "claimlens.menu.reviewQueue": "Review Queue",
+  "claimlens.reviewQueue.title": "Review Queue",
+  "claimlens.review.approve": "Approve",
+  "claimlens.review.reject": "Reject",
+  "claimlens.review.confirmReject": "Reject this extraction? The document will be marked as failed.",
+  "claimlens.review.edit": "Edit",
+  "claimlens.review.cancelEdit": "Cancel Edit",
+  "claimlens.review.mutation.approve": "Approve Extraction Review",
+  "claimlens.review.mutation.reject": "Reject Extraction Review"
 }

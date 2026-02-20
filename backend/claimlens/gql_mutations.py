@@ -8,7 +8,7 @@ from claimlens.apps import ClaimlensConfig
 from claimlens.models import (
     Document, DocumentType, EngineConfig, DocumentMutation,
     EngineCapabilityScore, ValidationRule, ValidationFinding, RegistryUpdateProposal,
-    EngineRoutingRule, AuditLog,
+    EngineRoutingRule, AuditLog, ExtractionResult,
 )
 from claimlens.services import (
     DocumentService, DocumentTypeService, EngineConfigService,
@@ -146,6 +146,15 @@ class ActivatePromptVersionInput(OpenIMISMutation.Input):
 class DeletePromptOverrideInput(OpenIMISMutation.Input):
     prompt_type = graphene.String(required=True)
     document_type_id = graphene.UUID(required=True)
+
+
+class ApproveExtractionReviewInput(OpenIMISMutation.Input):
+    document_uuid = graphene.UUID(required=True)
+    structured_data = graphene.JSONString(required=False)
+
+
+class RejectExtractionReviewInput(OpenIMISMutation.Input):
+    document_uuid = graphene.UUID(required=True)
 
 
 # --- Existing mutations ---
@@ -752,6 +761,99 @@ class DeletePromptOverrideMutation(OpenIMISMutation):
             result = service.delete_override(data['prompt_type'], data['document_type_id'])
             if not result.get('success'):
                 return [{"message": result.get('detail', 'Delete failed')}]
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+# --- Extraction review mutations ---
+
+class ApproveExtractionReviewMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "ApproveExtractionReviewMutation"
+
+    class Input(ApproveExtractionReviewInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_review_extraction_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            doc = Document.objects.get(id=data['document_uuid'], is_deleted=False)
+            if doc.status != 'review_required':
+                return [{"message": "Document is not in review_required status"}]
+
+            structured_data = data.get('structured_data')
+            corrected = False
+            if structured_data is not None:
+                extraction = ExtractionResult.objects.get(document=doc, is_deleted=False)
+                extraction.structured_data = structured_data
+                extraction.aggregate_confidence = 1.0
+                extraction.save(user=user)
+                corrected = True
+
+            from claimlens.services import DocumentService
+            DocumentService.update_status(doc, 'completed', user)
+
+            AuditLog(
+                document=doc,
+                action=AuditLog.Action.REVIEW,
+                details={
+                    'decision': 'approved',
+                    'corrected': corrected,
+                    'reviewed_by': user.username,
+                },
+            ).save(user=user)
+
+            return None
+        except Exception as exc:
+            return [{"message": str(exc)}]
+
+
+class RejectExtractionReviewMutation(OpenIMISMutation):
+    _mutation_module = "claimlens"
+    _mutation_class = "RejectExtractionReviewMutation"
+
+    class Input(RejectExtractionReviewInput):
+        pass
+
+    @classmethod
+    def async_mutate(cls, user, **data):
+        try:
+            if type(user) is AnonymousUser or not user.id:
+                raise ValidationError(_("mutation.authentication_required"))
+            if not user.has_perms(ClaimlensConfig.gql_mutation_review_extraction_perms):
+                raise PermissionDenied(_("unauthorized"))
+
+            data.pop('client_mutation_id', None)
+            data.pop('client_mutation_label', None)
+
+            doc = Document.objects.get(id=data['document_uuid'], is_deleted=False)
+            if doc.status != 'review_required':
+                return [{"message": "Document is not in review_required status"}]
+
+            from claimlens.services import DocumentService
+            DocumentService.update_status(
+                doc, 'failed', user,
+                error_message="Rejected during manual review"
+            )
+
+            AuditLog(
+                document=doc,
+                action=AuditLog.Action.REVIEW,
+                details={
+                    'decision': 'rejected',
+                    'reviewed_by': user.username,
+                },
+            ).save(user=user)
+
             return None
         except Exception as exc:
             return [{"message": str(exc)}]

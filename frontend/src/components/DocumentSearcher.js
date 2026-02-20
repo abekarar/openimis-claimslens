@@ -143,6 +143,8 @@ class DocumentSearcher extends Component {
       documentsPageInfo,
       fetchingDocuments,
       errorDocuments,
+      defaultFilters,
+      tableTitle,
     } = this.props;
 
     return (
@@ -176,7 +178,7 @@ class DocumentSearcher extends Component {
           itemsPageInfo={documentsPageInfo}
           fetchingItems={fetchingDocuments}
           errorItems={errorDocuments}
-          tableTitle={formatMessage(intl, "claimlens", "searcher.title")}
+          tableTitle={tableTitle || formatMessage(intl, "claimlens", "searcher.title")}
           headers={this.headers}
           itemFormatters={this.itemFormatters}
           sorts={this.sorts}
@@ -185,6 +187,7 @@ class DocumentSearcher extends Component {
           rowIdentifier={this.rowIdentifier}
           filtersToQueryParams={this.filtersToQueryParams}
           defaultOrderBy="-dateCreated"
+          defaultFilters={defaultFilters}
         />
       </>
     );
