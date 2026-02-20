@@ -759,6 +759,35 @@ export function activatePromptVersion(id, clientMutationLabel) {
   );
 }
 
+// --- Extraction review mutations ---
+
+export function approveExtractionReview(documentUuid, structuredData, clientMutationLabel) {
+  if (documentUuid == null) throw new Error("approveExtractionReview: documentUuid is required");
+  const fields = [`documentUuid: "${documentUuid}"`];
+  if (structuredData) fields.push(`structuredData: ${JSON.stringify(JSON.stringify(structuredData))}`);
+
+  const mutation = formatMutation("approveClaimlensExtractionReview", fields.join(", "), clientMutationLabel);
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_APPROVE_EXTRACTION_REVIEW_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
+export function rejectExtractionReview(documentUuid, clientMutationLabel) {
+  if (documentUuid == null) throw new Error("rejectExtractionReview: documentUuid is required");
+  const mutation = formatMutation(
+    "rejectClaimlensExtractionReview",
+    `documentUuid: "${documentUuid}"`,
+    clientMutationLabel
+  );
+  return graphql(
+    mutation.payload,
+    ["CLAIMLENS_MUTATION_REQ", "CLAIMLENS_REJECT_EXTRACTION_REVIEW_RESP", "CLAIMLENS_MUTATION_ERR"],
+    { clientMutationId: mutation.clientMutationId, clientMutationLabel, requestedDateTime: new Date() }
+  );
+}
+
 export function deletePromptOverride(promptType, documentTypeId, clientMutationLabel) {
   if (promptType == null) throw new Error("deletePromptOverride: promptType is required");
   if (documentTypeId == null) throw new Error("deletePromptOverride: documentTypeId is required");

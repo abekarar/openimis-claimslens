@@ -18,6 +18,8 @@ import {
   resolveValidationFinding,
   reviewRegistryProposal,
   applyRegistryProposal,
+  approveExtractionReview,
+  rejectExtractionReview,
 } from "../actions";
 import DocumentMetadataPanel from "./DocumentMetadataPanel";
 import ExtractionResultPanel from "./ExtractionResultPanel";
@@ -30,6 +32,8 @@ import LinkClaimDialog from "./LinkClaimDialog";
 import {
   STATUS_PENDING,
   STATUS_COMPLETED,
+  STATUS_REVIEW_REQUIRED,
+  RIGHT_CLAIMLENS_REVIEW_EXTRACTION,
   PROCESSING_STATUSES,
   TERMINAL_STATUSES,
   POLL_INTERVAL_MS,
@@ -39,12 +43,18 @@ import {
 const styles = (theme) => ({
   actions: { marginBottom: theme.spacing(2) },
   validateButton: { marginLeft: theme.spacing(1) },
+  reviewActions: {
+    marginBottom: theme.spacing(2),
+    display: "flex",
+    gap: theme.spacing(1),
+  },
 });
 
 class DocumentForm extends Component {
   state = {
     pollCount: 0,
     linkClaimOpen: false,
+    editedExtractionData: null,
   };
 
   componentDidMount() {
@@ -70,6 +80,19 @@ class DocumentForm extends Component {
       if (TERMINAL_STATUSES.includes(doc.status)) {
         this.stopPolling();
       }
+    }
+
+    if (this._pendingReject && prevProps.confirmed !== this.props.confirmed && this.props.confirmed) {
+      this._pendingReject = false;
+      const { intl } = this.props;
+      this.props.rejectExtractionReview(
+        doc.uuid,
+        formatMessage(intl, "claimlens", "review.mutation.reject")
+      );
+      setTimeout(() => {
+        this.props.fetchDocument(this.props.modulesManager, this.props.document_uuid);
+        this.props.fetchAuditLogs(this.props.modulesManager, this.props.document_uuid);
+      }, 1000);
     }
   }
 
@@ -161,6 +184,69 @@ class DocumentForm extends Component {
     }
   };
 
+  handleEditToggle = () => {
+    this.setState((prev) => ({
+      editedExtractionData: prev.editedExtractionData != null ? null : {},
+    }));
+  };
+
+  handleFieldChange = (key, value) => {
+    this.setState((prev) => ({
+      editedExtractionData: {
+        ...prev.editedExtractionData,
+        [key]: value,
+      },
+    }));
+  };
+
+  handleApproveReview = () => {
+    const { document: doc, intl } = this.props;
+    const { editedExtractionData } = this.state;
+    if (!doc) return;
+
+    let correctedData = null;
+    if (editedExtractionData != null && Object.keys(editedExtractionData).length > 0) {
+      const original = doc.extractionResult?.structuredData || {};
+      correctedData = { ...original };
+      Object.entries(editedExtractionData).forEach(([key, val]) => {
+        const originalValue = original[key];
+        const isComplex = typeof originalValue === "object" && originalValue !== null;
+        if (isComplex) {
+          try {
+            correctedData[key] = JSON.parse(val);
+          } catch {
+            correctedData[key] = val;
+          }
+        } else {
+          correctedData[key] = val;
+        }
+      });
+    }
+
+    this.props.approveExtractionReview(
+      doc.uuid,
+      correctedData,
+      formatMessage(intl, "claimlens", "review.mutation.approve")
+    );
+
+    setTimeout(() => {
+      this.setState({ editedExtractionData: null });
+      this.props.fetchDocument(this.props.modulesManager, this.props.document_uuid);
+      this.props.fetchAuditLogs(this.props.modulesManager, this.props.document_uuid);
+    }, 1000);
+  };
+
+  handleRejectReview = () => {
+    const { document: doc, intl } = this.props;
+    if (!doc) return;
+
+    this.props.coreConfirm(
+      formatMessage(intl, "claimlens", "review.reject"),
+      formatMessage(intl, "claimlens", "review.confirmReject")
+    );
+    this._pendingReject = true;
+  };
+
   gatherFindings(validationResults) {
     if (!validationResults || !validationResults.length) return [];
     const findings = [];
@@ -185,6 +271,7 @@ class DocumentForm extends Component {
 
   render() {
     const { classes, intl, document: doc, fetchingDocument, submittingMutation } = this.props;
+    const { editedExtractionData } = this.state;
     if (fetchingDocument || !doc) {
       return <CircularProgress />;
     }
@@ -192,6 +279,8 @@ class DocumentForm extends Component {
     const canProcess = doc.status === STATUS_PENDING;
     const isProcessing = PROCESSING_STATUSES.includes(doc.status);
     const canValidate = doc.status === STATUS_COMPLETED && !!doc.claimUuid;
+    const canReview = doc.status === STATUS_REVIEW_REQUIRED
+      && this.props.rights.includes(RIGHT_CLAIMLENS_REVIEW_EXTRACTION);
 
     const findings = this.gatherFindings(doc.validationResults);
     const proposals = this.gatherProposals(doc.validationResults);
@@ -216,6 +305,27 @@ class DocumentForm extends Component {
             <Button variant="outlined" disabled>
               <CircularProgress size={16} style={{ marginRight: 8 }} />
               {formatMessage(intl, "claimlens", "action.processing")}
+            </Button>
+          </div>
+        )}
+
+        {canReview && (
+          <div className={classes.reviewActions}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={this.handleApproveReview}
+              disabled={submittingMutation}
+            >
+              {formatMessage(intl, "claimlens", "review.approve")}
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={this.handleRejectReview}
+              disabled={submittingMutation}
+            >
+              {formatMessage(intl, "claimlens", "review.reject")}
             </Button>
           </div>
         )}
@@ -250,7 +360,13 @@ class DocumentForm extends Component {
         <ProcessingTimeline status={doc.status} />
         <DocumentMetadataPanel document={doc} />
         {doc.extractionResult && (
-          <ExtractionResultPanel extractionResult={doc.extractionResult} />
+          <ExtractionResultPanel
+            extractionResult={doc.extractionResult}
+            editable={canReview}
+            editedData={editedExtractionData}
+            onFieldChange={this.handleFieldChange}
+            onEditToggle={this.handleEditToggle}
+          />
         )}
         {doc.validationResults && doc.validationResults.length > 0 && (
           <ValidationResultPanel validationResults={doc.validationResults} />
@@ -284,6 +400,11 @@ const mapStateToProps = (state) => ({
   fetchingDocument: state.claimlens.fetchingDocument,
   submittingMutation: state.claimlens.submittingMutation,
   auditLogs: state.claimlens.auditLogs,
+  confirmed: state.core.confirmed,
+  rights:
+    !!state.core && !!state.core.user && !!state.core.user.i_user
+      ? state.core.user.i_user.rights
+      : [],
 });
 
 const mapDispatchToProps = (dispatch) =>
@@ -296,6 +417,8 @@ const mapDispatchToProps = (dispatch) =>
       resolveValidationFinding,
       reviewRegistryProposal,
       applyRegistryProposal,
+      approveExtractionReview,
+      rejectExtractionReview,
       journalize,
       coreConfirm,
     },

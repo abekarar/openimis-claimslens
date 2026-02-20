@@ -25,6 +25,7 @@ export const RIGHT_CLAIMLENS_MANAGE_ENGINE_ROUTING_RULES = 159020;
 export const RIGHT_CLAIMLENS_ENGINE_ROUTING_RULES = 159021;
 export const RIGHT_CLAIMLENS_PROMPT_TEMPLATES = 159022;
 export const RIGHT_CLAIMLENS_MANAGE_PROMPT_TEMPLATES = 159023;
+export const RIGHT_CLAIMLENS_REVIEW_EXTRACTION = 159024;
 
 // Prompt types
 export const PROMPT_TYPE_CLASSIFICATION = "classification";
@@ -161,3 +162,4 @@ export const ROUTE_CLAIMLENS_VALIDATION_RULE = "claimlens/validation-rules/rule"
 export const ROUTE_CLAIMLENS_SETTINGS = "claimlens/settings";
 export const ROUTE_CLAIMLENS_DOCUMENT_TYPES = "claimlens/document-types";
 export const ROUTE_CLAIMLENS_ENGINE_CONFIGS = "claimlens/engine-configs";
+export const ROUTE_CLAIMLENS_REVIEW_QUEUE = "claimlens/review-queue";

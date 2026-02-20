@@ -1,5 +1,5 @@
 import React from "react";
-import { FindInPage, Settings, GavelRounded, Tune, Memory } from "@material-ui/icons";
+import { FindInPage, Settings, GavelRounded, Tune, Memory, RateReview } from "@material-ui/icons";
 import { FormattedMessage } from "@openimis/fe-core";
 import ClaimLensMainMenu from "./components/ClaimLensMainMenu";
 import DocumentsPage from "./pages/DocumentsPage";
@@ -11,6 +11,7 @@ import ValidationRuleDetailPage from "./pages/ValidationRuleDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import DocumentTypesPage from "./pages/DocumentTypesPage";
 import EngineConfigsPage from "./pages/EngineConfigsPage";
+import ReviewQueuePage from "./pages/ReviewQueuePage";
 import DocumentStatusPicker from "./pickers/DocumentStatusPicker";
 import DocumentClassificationPicker from "./pickers/DocumentClassificationPicker";
 import ValidationStatusPicker from "./pickers/ValidationStatusPicker";
@@ -29,6 +30,7 @@ import {
   RIGHT_CLAIMLENS_DOCUMENT_TYPES,
   RIGHT_CLAIMLENS_ENGINE_CONFIGS,
   RIGHT_CLAIMLENS_MODULE_CONFIG,
+  RIGHT_CLAIMLENS_REVIEW_EXTRACTION,
   ROUTE_CLAIMLENS_DOCUMENTS,
   ROUTE_CLAIMLENS_DOCUMENT,
   ROUTE_CLAIMLENS_UPLOAD,
@@ -38,6 +40,7 @@ import {
   ROUTE_CLAIMLENS_SETTINGS,
   ROUTE_CLAIMLENS_DOCUMENT_TYPES,
   ROUTE_CLAIMLENS_ENGINE_CONFIGS,
+  ROUTE_CLAIMLENS_REVIEW_QUEUE,
 } from "./constants";
 
 const DEFAULT_CONFIG = {
@@ -53,6 +56,7 @@ const DEFAULT_CONFIG = {
     { key: "claimlens.route.settings", ref: ROUTE_CLAIMLENS_SETTINGS },
     { key: "claimlens.route.documentTypes", ref: ROUTE_CLAIMLENS_DOCUMENT_TYPES },
     { key: "claimlens.route.engineConfigs", ref: ROUTE_CLAIMLENS_ENGINE_CONFIGS },
+    { key: "claimlens.route.reviewQueue", ref: ROUTE_CLAIMLENS_REVIEW_QUEUE },
     { key: "claimlens.DocumentStatusPicker", ref: DocumentStatusPicker },
     { key: "claimlens.DocumentStatusPicker.projection", ref: null },
     { key: "claimlens.DocumentClassificationPicker", ref: DocumentClassificationPicker },
@@ -81,6 +85,7 @@ const DEFAULT_CONFIG = {
     { path: ROUTE_CLAIMLENS_SETTINGS, component: SettingsPage },
     { path: ROUTE_CLAIMLENS_DOCUMENT_TYPES, component: DocumentTypesPage },
     { path: ROUTE_CLAIMLENS_ENGINE_CONFIGS, component: EngineConfigsPage },
+    { path: ROUTE_CLAIMLENS_REVIEW_QUEUE, component: ReviewQueuePage },
   ],
   "core.MainMenu": [
     { name: "ClaimLensMainMenu", component: ClaimLensMainMenu },
@@ -92,6 +97,13 @@ const DEFAULT_CONFIG = {
       route: "/" + ROUTE_CLAIMLENS_DOCUMENTS,
       id: "claimlens.menu.documents",
       filter: (rights) => rights.includes(RIGHT_CLAIMLENS_DOCUMENTS),
+    },
+    {
+      text: <FormattedMessage module="claimlens" id="menu.reviewQueue" />,
+      icon: <RateReview />,
+      route: "/" + ROUTE_CLAIMLENS_REVIEW_QUEUE,
+      id: "claimlens.menu.reviewQueue",
+      filter: (rights) => rights.includes(RIGHT_CLAIMLENS_REVIEW_EXTRACTION),
     },
     {
       text: <FormattedMessage module="claimlens" id="menu.upload" />,
@@ -176,6 +188,8 @@ export {
   savePromptVersion,
   activatePromptVersion,
   deletePromptOverride,
+  approveExtractionReview,
+  rejectExtractionReview,
 } from "./actions";
 
 export const ClaimLensModule = (cfg) => {

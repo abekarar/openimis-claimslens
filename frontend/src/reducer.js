@@ -466,6 +466,10 @@ function reducer(state = initialState, action) {
       return dispatchMutationResp(state, "activateClaimlensPromptVersion", action);
     case "CLAIMLENS_DELETE_PROMPT_OVERRIDE_RESP":
       return dispatchMutationResp(state, "deleteClaimlensPromptOverride", action);
+    case "CLAIMLENS_APPROVE_EXTRACTION_REVIEW_RESP":
+      return dispatchMutationResp(state, "approveClaimlensExtractionReview", action);
+    case "CLAIMLENS_REJECT_EXTRACTION_REVIEW_RESP":
+      return dispatchMutationResp(state, "rejectClaimlensExtractionReview", action);
 
     default:
       return state;

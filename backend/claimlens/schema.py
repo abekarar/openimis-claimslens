@@ -29,6 +29,7 @@ from claimlens.gql_mutations import (
     CreateEngineRoutingRuleMutation, UpdateEngineRoutingRuleMutation,
     SavePromptVersionMutation, ActivatePromptVersionMutation,
     DeletePromptOverrideMutation,
+    ApproveExtractionReviewMutation, RejectExtractionReviewMutation,
 )
 from claimlens.models import (
     Document, DocumentType, EngineConfig, ExtractionResult, AuditLog,
@@ -252,6 +253,8 @@ class Mutation(graphene.ObjectType):
     save_claimlens_prompt_version = SavePromptVersionMutation.Field()
     activate_claimlens_prompt_version = ActivatePromptVersionMutation.Field()
     delete_claimlens_prompt_override = DeletePromptOverrideMutation.Field()
+    approve_claimlens_extraction_review = ApproveExtractionReviewMutation.Field()
+    reject_claimlens_extraction_review = RejectExtractionReviewMutation.Field()
 
 
 def _check_permissions(user, perms):

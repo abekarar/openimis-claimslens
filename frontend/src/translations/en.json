@@ -356,5 +356,15 @@
   "claimlens.documentType.promptOverrides.useCustomExtraction": "Use custom extraction prompt for this document type",
   "claimlens.documentType.promptOverrides.usingGlobal": "(Using global prompt)",
   "claimlens.documentType.promptOverrides.mutation.save": "Save Prompt Override",
-  "claimlens.documentType.promptOverrides.mutation.delete": "Remove Prompt Override"
+  "claimlens.documentType.promptOverrides.mutation.delete": "Remove Prompt Override",
+
+  "claimlens.menu.reviewQueue": "Review Queue",
+  "claimlens.reviewQueue.title": "Review Queue",
+  "claimlens.review.approve": "Approve",
+  "claimlens.review.reject": "Reject",
+  "claimlens.review.confirmReject": "Reject this extraction? The document will be marked as failed.",
+  "claimlens.review.edit": "Edit",
+  "claimlens.review.cancelEdit": "Cancel Edit",
+  "claimlens.review.mutation.approve": "Approve Extraction Review",
+  "claimlens.review.mutation.reject": "Reject Extraction Review"
 }
