@@ -105,7 +105,6 @@ class Query(graphene.ObjectType):
     claimlens_prompt_templates = OrderedDjangoFilterConnectionField(
         PromptTemplateGQLType,
         orderBy=graphene.List(of_type=graphene.String),
-        prompt_type=graphene.String(),
         document_type_id=graphene.UUID(),
     )
     claimlens_prompt_template = graphene.Field(
