@@ -240,11 +240,15 @@ class EngineCapabilityScoreService(BaseService):
         if created:
             score.accuracy_score = new_accuracy
             score.speed_score = new_speed
+            score.save(user=user)
         else:
-            score.accuracy_score = int(ALPHA * new_accuracy + (1 - ALPHA) * score.accuracy_score)
-            score.speed_score = int(ALPHA * new_speed + (1 - ALPHA) * score.speed_score)
+            updated_accuracy = int(ALPHA * new_accuracy + (1 - ALPHA) * score.accuracy_score)
+            updated_speed = int(ALPHA * new_speed + (1 - ALPHA) * score.speed_score)
+            if updated_accuracy != score.accuracy_score or updated_speed != score.speed_score:
+                score.accuracy_score = updated_accuracy
+                score.speed_score = updated_speed
+                score.save(user=user)
 
-        score.save(user=user)
         logger.info(
             "Updated capability score for %s [%s]: accuracy=%d, speed=%d",
             engine_config.name, language, score.accuracy_score, score.speed_score,
